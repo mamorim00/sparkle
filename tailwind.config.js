@@ -7,11 +7,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#b6e1fa',       // muted blue main background
-        'primary-light': '#c6d7e5', // lighter blue for cards & inputs
-        accent: '#89a9c9',        // slightly darker muted blue for hover/buttons
-        'primary-dark': '#7b9fb0', // optional: for darker hover
-      },
+        primary: '#b6e1fa',       // soft blue background
+        'primary-light': '#eaf6fd', // near-white blue for cards
+        'primary-dark': '#406882', // deep muted blue for headers
+        accent: '#3b82f6',        // stronger blue for links/buttons
+        highlight: '#fca311',     // warm orange for CTAs
+        neutral: '#1f2937',       // dark gray for text
+      },   
     },
   },
   plugins: [],

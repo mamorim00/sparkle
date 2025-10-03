@@ -9,16 +9,21 @@ import { useLocation } from "../../context/LocationContext";
 interface Cleaner {
   id: string;
   name: string;
-  photoUrl: string;
+  photoUrl: string; // ✅ always string now
   rating: number;
   location: string;
   pricePerHour: number;
+  status: string;
+  nextAvailable2h: string | null; // if you added this prop
+  nextAvailable6h: string | null; 
 }
+
+const DEFAULT_IMAGE = "/images/default-cleaner.png"; // <- put this in public/images
 
 export default function CleanersPage() {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
-  const { location } = useLocation(); // get current location
+  const { location } = useLocation();
 
   useEffect(() => {
     const fetchCleaners = async () => {
@@ -26,13 +31,19 @@ export default function CleanersPage() {
       try {
         const q = query(
           collection(db, "cleaners"),
-          where("location", "==", location)
+          where("location", "==", location),
+          where("status", "==", "approved") // ✅ only approved cleaners
         );
+
         const querySnapshot = await getDocs(q);
-        const data: Cleaner[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Cleaner[];
+        const data: Cleaner[] = querySnapshot.docs.map((doc) => {
+          const cleanerData = doc.data() as Omit<Cleaner, "id" | "photoUrl"> & { photoUrl?: string };
+          return {
+            id: doc.id,
+            ...cleanerData,
+            photoUrl: cleanerData.photoUrl || DEFAULT_IMAGE, // ✅ fallback ensures string
+          };
+        });
         setCleaners(data);
       } catch (err) {
         console.error("Error fetching cleaners:", err);
@@ -43,7 +54,7 @@ export default function CleanersPage() {
     };
 
     fetchCleaners();
-  }, [location]); // refetch when location changes
+  }, [location]);
 
   if (loading) {
     return (
@@ -59,6 +70,7 @@ export default function CleanersPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           Available Cleaners in {location}
         </h1>
+
         {cleaners.length === 0 ? (
           <p className="text-center text-gray-700">
             No cleaners available in {location}. More locations coming soon!
@@ -70,10 +82,13 @@ export default function CleanersPage() {
                 key={cleaner.id}
                 id={cleaner.id}
                 name={cleaner.name}
-                photoUrl={cleaner.photoUrl}
+                photoUrl={cleaner.photoUrl} // ✅ always string now
                 rating={cleaner.rating}
                 location={cleaner.location}
                 pricePerHour={cleaner.pricePerHour}
+                nextAvailable2h={cleaner.nextAvailable2h}
+                nextAvailable6h={cleaner.nextAvailable6h}
+                selectedDuration={2} // or 6 depending on the page
               />
             ))}
           </div>

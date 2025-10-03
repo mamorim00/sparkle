@@ -30,7 +30,8 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white shadow px-6 py-4 flex justify-between items-center">
+      <nav className="bg-primary-dark text-white shadow px-6 py-4 flex justify-between items-center">
+
         <div className="flex items-center space-x-4">
           <Link href="/" className="text-2xl font-bold text-primary">
             Sparkle
@@ -39,7 +40,7 @@ export default function Navbar() {
           {/* Location Selector */}
           <button
             onClick={() => setShowLocationPopup(true)}
-            className="bg-primary-light text-primary px-3 py-1 rounded hover:bg-primary transition"
+            className="bg-primary-light text-neutral px-3 py-1 rounded hover:bg-primary transition"
           >
             {location} ▼
           </button>
@@ -59,7 +60,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/auth/login"
-              className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+              className="bg-primary-light text-neutral px-4 py-2 rounded hover:bg-primary-light transition"
             >
               Login
             </Link>

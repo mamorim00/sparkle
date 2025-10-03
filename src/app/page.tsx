@@ -18,6 +18,8 @@ interface Cleaner {
   rating: number;
   location: string;
   pricePerHour: number;
+  nextAvailable2h: string | null; // ISO-like string or null
+  nextAvailable6h: string | null;
 }
 
 interface Service {
@@ -140,6 +142,9 @@ export default function HomePage() {
                   rating={cleaner.rating}
                   location={cleaner.location}
                   pricePerHour={cleaner.pricePerHour}
+                  nextAvailable2h={cleaner.nextAvailable2h}
+                  nextAvailable6h={cleaner.nextAvailable6h}
+                  selectedDuration={2} // or 6 depending on the page
                   
                 />
               ))}

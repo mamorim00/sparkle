@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { db } from "../../../lib/firebase";
 import {
@@ -11,9 +11,10 @@ import {
   query,
   where,
   getDocs,
-  addDoc,
+  Timestamp, // Import Timestamp for cleaner interface typing
 } from "firebase/firestore";
 
+// --- INTERFACES & CONSTANTS ---
 interface TimeSlot {
   start: string;
   end: string;
@@ -28,6 +29,9 @@ interface Cleaner {
   pricePerHour: number;
   schedule: Record<string, TimeSlot[]>;
   exceptions: (TimeSlot & { date: string })[];
+  // ADDED: Pre-calculated availability fields
+  nextAvailable2h?: Timestamp | null; 
+  nextAvailable6h?: Timestamp | null;
 }
 
 interface CleaningType {
@@ -41,7 +45,14 @@ const CLEANING_TYPES: CleaningType[] = [
   { name: "Deep Clean", durationHours: 6, priceMultiplier: 2 },
 ];
 
-// Helpers
+// --- CONSTANTS ---
+const MAX_SEARCH_LIMIT = 90; // The maximum number of days into the future to search for availability.
+// --------------------------------------------------------
+
+
+// --- HELPER FUNCTIONS (Modified) ---
+
+// Helper functions (time conversion, etc.) remain unchanged
 const timeToMinutes = (time: string) => {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
@@ -54,43 +65,89 @@ const minutesToTime = (minutes: number) => {
 const addHours = (time: string, hours: number) => {
   const [h, m] = time.split(":").map(Number);
   const end = new Date();
-  end.setHours(h + hours, m);
+  end.setHours(h + hours, m, 0, 0);
   return `${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`;
 };
 const generateAvailableSlots = (slots: TimeSlot[], durationHours: number) => {
   const result: string[] = [];
   const requiredMinutes = durationHours * 60;
-
   for (let slot of slots) {
     const startMinutes = timeToMinutes(slot.start);
     const endMinutes = timeToMinutes(slot.end);
-
     if (endMinutes - startMinutes < requiredMinutes) continue;
-
     let current = startMinutes;
     while (current + requiredMinutes <= endMinutes) {
       result.push(minutesToTime(current));
       current += 60;
     }
   }
-
   return result;
+};
+const getWeekdayName = (date: Date) => date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+// DELETED: getNextAvailableSlot is no longer needed
+
+const formatAvailability = (isoDateString: string) => {
+  const date = new Date(isoDateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const comparisonDate = new Date(date);
+  comparisonDate.setHours(0, 0, 0, 0);
+
+  const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+
+  if (comparisonDate.getTime() === today.getTime()) {
+    return `Today at ${date.toLocaleTimeString([], timeOptions)}`;
+  } else if (comparisonDate.getTime() === tomorrow.getTime()) {
+    return `Tomorrow at ${date.toLocaleTimeString([], timeOptions)}`;
+  } else {
+    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    return `${date.toLocaleDateString([], dateOptions)} at ${date.toLocaleTimeString([], timeOptions)}`;
+  }
 };
 
 
-const getWeekdayName = (date: Date) => date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
-
+// --- COMPONENT START ---
 export default function BookPage() {
   const params = useParams<{ cleanerId?: string }>();
+  const router = useRouter();
   const cleanerId = params?.cleanerId ?? "";
 
   const [cleaner, setCleaner] = useState<Cleaner | null>(null);
   const [selectedCleaning, setSelectedCleaning] = useState<CleaningType>(CLEANING_TYPES[0]);
   const [guestName, setGuestName] = useState<string>("");
+
   const [days, setDays] = useState<Date[]>([]);
   const [slotsByDay, setSlotsByDay] = useState<Record<string, string[]>>({});
+  const [searchOffset, setSearchOffset] = useState(0);
+  const DAYS_TO_LOAD = 5;
 
-  // Fetch cleaner
+  // State now tracks the *relevant* pre-calculated time
+  const [nextAvailableTime, setNextAvailableTime] = useState<string | null>(null);
+
+  // Helper to extract the correct pre-calculated time based on duration
+  const getNextAvailableTimeForDuration = useCallback((cleanerData: Cleaner, duration: number): string | null => {
+      let timestamp: Timestamp | null | undefined;
+
+      if (duration === 2) {
+          timestamp = cleanerData.nextAvailable2h;
+      } else if (duration === 6) {
+          timestamp = cleanerData.nextAvailable6h;
+      }
+
+      if (timestamp) {
+          // Convert Firestore Timestamp to ISO string
+          return timestamp.toDate().toISOString();
+      }
+      return null;
+  }, []);
+
+
+  // 1. Fetch cleaner details
   useEffect(() => {
     if (!cleanerId) return;
     const fetchCleaner = async () => {
@@ -99,44 +156,40 @@ export default function BookPage() {
       if (docSnap.exists()) {
         const data = docSnap.data() as Cleaner;
         setCleaner({ ...data, id: cleanerId });
+        
+        // 🚨 FIX: Set initial availability based on the default selectedCleaning
+        setNextAvailableTime(getNextAvailableTimeForDuration(data, CLEANING_TYPES[0].durationHours));
       }
     };
     fetchCleaner();
-  }, [cleanerId]);
+  }, [cleanerId, getNextAvailableTimeForDuration]); // Dependency on helper
 
-  // Initialize first 5 days
-  useEffect(() => {
-    const initDays: Date[] = [];
-    const today = new Date();
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      initDays.push(d);
-    }
-    setDays(initDays);
-  }, []);
 
-  // Fetch available slots for all loaded days
-  useEffect(() => {
+  // 2. Main function to search for available slots
+  const searchForAvailableSlots = useCallback(async (startDayIndex: number) => {
     if (!cleaner) return;
-  
-    const fetchSlots = async () => {
-      const newSlots: Record<string, string[]> = {};
-  
-      for (let day of days) {
+
+    let daysFound = 0;
+    const newDays: Date[] = [];
+    const newSlots: Record<string, string[]> = {};
+    const today = new Date();
+
+    for (let i = startDayIndex; daysFound < DAYS_TO_LOAD && i < MAX_SEARCH_LIMIT; i++) {
+        const day = new Date(today);
+        day.setDate(today.getDate() + i);
+        day.setHours(0, 0, 0, 0);
+
+        const isToday = i === 0;
+
         const dayKey = day.toISOString().slice(0, 10);
         const weekday = getWeekdayName(day);
-  
-        // 1. Get base slots for the day
+
         let weekdaySlots = cleaner.schedule?.[weekday] || [];
-  
-        // 2. Remove exceptions
         const exceptions = cleaner.exceptions?.filter(ex => ex.date === dayKey) || [];
         weekdaySlots = weekdaySlots.filter(
           ws => !exceptions.some(ex => ex.start === ws.start && ex.end === ws.end)
         );
-  
-        // 3. Remove booked slots (check for overlaps)
+
         const bookingsRef = collection(db, "bookings");
         const q = query(
           bookingsRef,
@@ -146,76 +199,75 @@ export default function BookPage() {
         const bookedDocs = await getDocs(q);
         const bookedTimes = bookedDocs.docs.map(d => d.data()) as TimeSlot[];
 
-        // Filter out overlapping booked times
-        weekdaySlots = weekdaySlots.filter(ws => {
-          const wsStart = timeToMinutes(ws.start);
-          const wsEnd = timeToMinutes(ws.end);
+        let validSlots = generateAvailableSlots(weekdaySlots, selectedCleaning.durationHours);
 
+        validSlots = validSlots.filter(start => {
+          const slotStart = timeToMinutes(start);
+          const slotEnd = slotStart + selectedCleaning.durationHours * 60;
+          if (isToday) {
+             const currentTimeMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+             // Only include slots that start AFTER the current time
+             if (slotStart < currentTimeMinutes) return false; 
+          }
           return !bookedTimes.some(bs => {
             const bsStart = timeToMinutes(bs.start);
             const bsEnd = timeToMinutes(bs.end);
-
-            // Overlap occurs if the booking starts before slot ends AND booking ends after slot starts
-            return bsStart < wsEnd && bsEnd > wsStart;
+            return bsStart < slotEnd && bsEnd > slotStart;
           });
         });
 
-  
-        // 4. Generate only valid slots for the selected cleaning type
-        const validSlots = generateAvailableSlots(weekdaySlots, selectedCleaning.durationHours);
-  
-        newSlots[dayKey] = validSlots;
-      }
-  
-      setSlotsByDay(newSlots);
-    };
-  
-    fetchSlots();
-  }, [cleaner, days, selectedCleaning, cleanerId]);
-  
+        if (validSlots.length > 0) {
+          newDays.push(day);
+          newSlots[dayKey] = validSlots;
+          daysFound++;
+        }
+        setSearchOffset(i + 1);
+    }
 
+    setDays(prevDays => startDayIndex === 0 ? newDays : [...prevDays, ...newDays]);
+    setSlotsByDay(prevSlots => ({ ...prevSlots, ...newSlots })); // Removed nextAvailableTime calculation here
+
+  }, [cleaner, cleanerId, selectedCleaning.durationHours]);
+
+
+  // 3. Effect to run the initial search AND update availability when cleaning type changes
+  useEffect(() => {
+    if (cleaner) {
+        // Reset slots and run search for the calendar view
+        setDays([]);
+        setSlotsByDay({});
+        setSearchOffset(0);
+        searchForAvailableSlots(0);
+        
+        // 🚨 FIX: Update the next available time based on the selected duration
+        setNextAvailableTime(getNextAvailableTimeForDuration(cleaner, selectedCleaning.durationHours));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleaner, selectedCleaning.durationHours, getNextAvailableTimeForDuration]); // Reruns when cleaner or cleaning type changes
+
+
+  // 4. Load More logic
+  const loadMoreDays = () => {
+    searchForAvailableSlots(searchOffset);
+  };
+
+
+  // 5. Handle Booking
   const handleBook = async (dayKey: string, start: string) => {
     if (!cleaner) return;
-    const end = addHours(start, selectedCleaning.durationHours);
     const totalPrice = cleaner.pricePerHour * selectedCleaning.durationHours * selectedCleaning.priceMultiplier;
-
-    const proceed = confirm(
-      `Booking: ${selectedCleaning.name}\nDate: ${dayKey}\nStart: ${start}\nEnd: ${end}\nTotal Price: €${totalPrice}\nProceed?`
-    );
-    if (!proceed) return;
-
-    for (let i = 0; i < selectedCleaning.durationHours; i++) {
-      const slotStart = addHours(start, i);
-      const slotEnd = addHours(start, i + 1);
-      await addDoc(collection(db, "bookings"), {
-        cleanerId,
-        guestName: guestName || "Guest",
-        date: dayKey,
-        start: slotStart,
-        end: slotEnd,
-        cleaningType: selectedCleaning.name,
-        totalPrice,
-        guest: true,
-      });
-    }
-
-    alert("Booking confirmed!");
-    setSlotsByDay(prev => ({
-      ...prev,
-      [dayKey]: prev[dayKey].filter(s => s !== start),
-    }));
+    const params = {
+      cleanerName: cleaner.name,
+      date: dayKey,
+      start: start,
+      type: selectedCleaning.name,
+      duration: selectedCleaning.durationHours.toString(),
+      totalPrice: totalPrice.toFixed(2),
+    };
+    const searchParams = new URLSearchParams(params);
+    router.push(`/checkout?${searchParams.toString()}`);
   };
 
-  const loadMoreDays = () => {
-    const newDays: Date[] = [];
-    const lastDay = days[days.length - 1];
-    for (let i = 1; i <= 5; i++) {
-      const d = new Date(lastDay);
-      d.setDate(lastDay.getDate() + i);
-      newDays.push(d);
-    }
-    setDays(prev => [...prev, ...newDays]);
-  };
 
   if (!cleaner) return <p>Loading...</p>;
 
@@ -231,6 +283,15 @@ export default function BookPage() {
           <p className="text-gray-500">{cleaner.location}</p>
           <p className="text-sm text-yellow-500">{cleaner.rating !== undefined ? `★ ${cleaner.rating.toFixed(1)}` : "No rating"}</p>
           <p className="font-semibold">{cleaner.pricePerHour}€ / hour</p>
+          {nextAvailableTime ? (
+             <p className="text-sm text-green-600 font-bold mt-1">
+                 Next available ({selectedCleaning.durationHours}h): {formatAvailability(nextAvailableTime)}
+             </p>
+          ) : (
+             <p className="text-sm text-red-500 font-bold mt-1">
+                 No availability found for the next {MAX_SEARCH_LIMIT} days.
+             </p>
+          )}
         </div>
       </div>
 
@@ -261,12 +322,12 @@ export default function BookPage() {
       {days.map(day => {
         const dayKey = day.toISOString().slice(0, 10);
         const slots = slotsByDay[dayKey] || [];
+        if (slots.length === 0) return null;
         return (
           <div key={dayKey} className="mb-4">
             <h2 className="text-lg font-semibold mb-2">{day.toDateString()}</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {slots.length > 0 ? (
-                slots.map(start => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {slots.map(start => (
                   <button
                     key={start}
                     onClick={() => handleBook(dayKey, start)}
@@ -274,21 +335,28 @@ export default function BookPage() {
                   >
                     {start} - {addHours(start, selectedCleaning.durationHours)}
                   </button>
-                ))
-              ) : (
-                <p className="col-span-2 text-gray-500">No slots available</p>
-              )}
+              ))}
             </div>
           </div>
         );
       })}
 
-      <button
-        onClick={loadMoreDays}
-        className="w-full bg-primary text-white py-2 rounded hover:bg-green-600 transition"
-      >
-        Load more days
-      </button>
+      {/* Message if no slots are found */}
+      {days.length === 0 && searchOffset >= MAX_SEARCH_LIMIT && (
+          <div className="text-center py-4 text-gray-500">
+              No available slots found within the next {MAX_SEARCH_LIMIT} days.
+          </div>
+      )}
+
+      {/* Load more button */}
+      {searchOffset < MAX_SEARCH_LIMIT && (
+        <button
+          onClick={loadMoreDays}
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
+        >
+          Load more available days
+        </button>
+      )}
     </div>
   );
 }
