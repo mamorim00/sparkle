@@ -7,9 +7,7 @@ import CleanerCard from "../components/CleanerCard";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocation } from "../context/LocationContext";
-
-// inside HomePage
-
+import { useRouter } from "next/navigation";
 
 interface Cleaner {
   id: string;
@@ -18,7 +16,7 @@ interface Cleaner {
   rating: number;
   location: string;
   pricePerHour: number;
-  nextAvailable2h: string | null; // ISO-like string or null
+  nextAvailable2h: string | null;
   nextAvailable6h: string | null;
 }
 
@@ -28,24 +26,33 @@ interface Service {
   imageUrl: string;
 }
 
-const POPULAR_SERVICES: Service[] = [
+
+
+const ALL_SERVICES: Service[] = [
   { id: "simple-clean", name: "Simple Clean", imageUrl: "/images/simple.jpg" },
   { id: "deep-clean", name: "Deep Clean", imageUrl: "/images/deep-clean.jpg" },
   { id: "move-out-clean", name: "Move-Out Clean", imageUrl: "/images/move-out-clean.jpg" },
 ];
 
 export default function HomePage() {
-  const { location } = useLocation(); 
+  const { location } = useLocation();
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredServices, setFilteredServices] = useState<Service[]>(ALL_SERVICES.slice(0, 5));
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  // fetch featured cleaners
   useEffect(() => {
     const fetchFeaturedCleaners = async () => {
       try {
         const q = query(
           collection(db, "cleaners"),
           where("status", "==", "approved"),
-          where("location", "==", location), // <-- filter by selected location
+          where("location", "==", location),
           limit(6)
         );
         const querySnapshot = await getDocs(q);
@@ -64,7 +71,41 @@ export default function HomePage() {
     };
 
     fetchFeaturedCleaners();
-  }, []);
+  }, [location]);
+
+  // filter services for autocomplete dropdown
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredServices(ALL_SERVICES.slice(0, 5));
+    } else {
+      const filtered = ALL_SERVICES.filter((s) =>
+        s.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ).slice(0, 5);
+      setFilteredServices(filtered);
+    }
+  }, [searchTerm]);
+
+  // helper to get service ID from name
+  const getServiceIdFromName = (name: string) => {
+    const service = ALL_SERVICES.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    return service?.id;
+  };
+
+  const handleSearch = () => {
+    if (!searchTerm.trim()) return;
+
+    const serviceId = getServiceIdFromName(searchTerm);
+    if (serviceId) {
+      router.push(`/cleaners?service=${serviceId}`);
+    } else {
+      router.push("/cleaners"); // fallback
+    }
+  };
+
+  const handleSelectService = (serviceName: string) => {
+    setSearchTerm(serviceName);
+    setDropdownOpen(false);
+  };
 
   return (
     <main className="min-h-screen bg-primary text-gray-800 font-sans">
@@ -78,13 +119,40 @@ export default function HomePage() {
             Book professional cleaning services in just a few clicks
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="What service do you need?"
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-300 bg-primary-light focus:outline-none focus:ring-2 focus:ring-accent text-gray-800"
-            />
-            <button className="bg-accent text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-dark transition">
+          {/* Autocomplete Search */}
+          <div className="relative flex flex-col sm:flex-row justify-center gap-4 max-w-2xl mx-auto">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setDropdownOpen(true);
+                }}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder="What service do you need?"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-primary-light focus:outline-none focus:ring-2 focus:ring-accent text-gray-800"
+              />
+
+              {dropdownOpen && filteredServices.length > 0 && (
+                <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto">
+                  {filteredServices.map((service) => (
+                    <li
+                      key={service.id}
+                      onClick={() => handleSelectService(service.name)}
+                      className="px-4 py-2 cursor-pointer hover:bg-primary-light text-left"
+                    >
+                      {service.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <button
+              onClick={handleSearch}
+              className="bg-accent text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-dark transition"
+            >
               Search
             </button>
           </div>
@@ -98,11 +166,11 @@ export default function HomePage() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {POPULAR_SERVICES.map((service) => (
-            <Link
+          {ALL_SERVICES.map((service) => (
+            <div
               key={service.id}
-              href={`/services/${service.id}`}
-              className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition"
+              onClick={() => router.push(`/cleaners?service=${encodeURIComponent(service.name)}`)}
+              className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition cursor-pointer"
             >
               <div className="relative w-full h-56 sm:h-64">
                 <Image
@@ -115,7 +183,7 @@ export default function HomePage() {
               <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-30 p-4 backdrop-blur-sm">
                 <p className="text-white text-xl font-semibold">{service.name}</p>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </section>
@@ -144,8 +212,7 @@ export default function HomePage() {
                   pricePerHour={cleaner.pricePerHour}
                   nextAvailable2h={cleaner.nextAvailable2h}
                   nextAvailable6h={cleaner.nextAvailable6h}
-                  selectedDuration={2} // or 6 depending on the page
-                  
+                  selectedDuration={2}
                 />
               ))}
             </div>
@@ -160,32 +227,6 @@ export default function HomePage() {
             </div>
           </>
         )}
-      </section>
-
-      {/* How it works section */}
-      <section className="py-16 bg-primary">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-10">How it works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((step) => (
-              <div
-                key={step}
-                className="p-6 bg-primary-light rounded-2xl shadow-md hover:shadow-lg transition"
-              >
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                  {step}. {step === 1 ? "Search a Service" : step === 2 ? "Book a Service" : "Get it Done"}
-                </h3>
-                <p className="text-gray-700">
-                  {step === 1
-                    ? "Type the service you need and browse trusted professionals."
-                    : step === 2
-                    ? "Select a cleaner and book instantly with secure payment."
-                    : "Cleaner arrives on time and your space shines."}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
     </main>
   );
