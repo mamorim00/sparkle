@@ -169,7 +169,7 @@ export default function HomePage() {
           {ALL_SERVICES.map((service) => (
             <div
               key={service.id}
-              onClick={() => router.push(`/cleaners?service=${encodeURIComponent(service.name)}`)}
+              onClick={() => router.push(`/cleaners?service=${encodeURIComponent(service.id)}`)}
               className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition cursor-pointer"
             >
               <div className="relative w-full h-56 sm:h-64">

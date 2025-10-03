@@ -37,11 +37,12 @@ export default function Footer() {
         <div>
           <h3 className="font-bold text-white mb-3">For Cleaners</h3>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/auth/signup" className="hover:text-primary">Join as a Cleaner</Link></li>
+            <li><Link href="/auth/login?mode=register&role=cleaner" className="hover:text-primary">Join as a Cleaner</Link></li>
             <li><Link href="/dashboard" className="hover:text-primary">Dashboard</Link></li>
             <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
           </ul>
         </div>
+        
 
         {/* Legal */}
         <div>
