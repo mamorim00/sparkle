@@ -1,21 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { useRouter } from "next/navigation";
 import CleanerDashboard from "@/app/cleaner-dashboard/page";
 
 interface Step3ScheduleProps {
   onBack: () => void;
+  onNext: (data: any) => void;
   cleanerData: any;
 }
 
-export default function Step3Schedule({ onBack, cleanerData }: Step3ScheduleProps) {
+export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3ScheduleProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [saving, setSaving] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -24,26 +21,12 @@ export default function Step3Schedule({ onBack, cleanerData }: Step3ScheduleProp
     return () => unsubscribe();
   }, []);
 
-  const handleFinish = async () => {
-    if (!user) return;
-
-    setSaving(true);
-
-    // Save the cleaner data and schedule in Firestore
-    await setDoc(
-      doc(db, "cleaners", user.uid),
-      {
-        ...cleanerData,
-        status: "pending", // admin approval
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    setSaving(false);
-
-    // Redirect to cleaner profile page
-    router.push("/cleaner/profile");
+  const handleNext = () => {
+    // Example: here you’d collect schedule info from dashboard or inputs
+    const scheduleData = {
+      schedule: cleanerData.schedule || {}, // replace with actual schedule state
+    };
+    onNext(scheduleData);
   };
 
   if (!user) {
@@ -58,10 +41,10 @@ export default function Step3Schedule({ onBack, cleanerData }: Step3ScheduleProp
     <div>
       <h2 className="text-xl font-bold mb-4">Step 3: Your Cleaner Dashboard</h2>
       <p className="text-sm mb-4">
-        You can now see your real dashboard and edit your profile or schedule.
+        You can now see your dashboard and edit your profile or schedule.
       </p>
 
-      {/* Render your real dashboard */}
+      {/* Replace with your real dashboard/schedule form */}
       <CleanerDashboard />
 
       <div className="flex justify-between mt-4">
@@ -73,11 +56,10 @@ export default function Step3Schedule({ onBack, cleanerData }: Step3ScheduleProp
         </button>
 
         <button
-          onClick={handleFinish}
-          disabled={saving}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+          onClick={handleNext}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
         >
-          {saving ? "Saving..." : "Finish & Go to Profile"}
+          Continue to Verification
         </button>
       </div>
     </div>

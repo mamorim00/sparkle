@@ -4,6 +4,7 @@ import { useState } from "react";
 import Step1Profile from "./steps/Step1Profile";
 import Step2Price from "./steps/Step2Price";
 import Step3Schedule from "./steps/Step3Schedule";
+import Step4Verification from "./steps/Step4Verification";
 
 export default function CleanerSetupPage() {
   const [step, setStep] = useState(1);
@@ -11,6 +12,10 @@ export default function CleanerSetupPage() {
     name: "",
     photoUrl: "",
     pricePerHour: 0,
+    schedule: {},
+    businessId: "",
+    insuranceCertificateUrl: "",
+    otherDocsUrl: "",
   });
 
   const goNext = (data: Partial<typeof cleanerData>) => {
@@ -31,7 +36,10 @@ export default function CleanerSetupPage() {
         <Step2Price onNext={goNext} onBack={goBack} initialData={cleanerData} />
       )}
       {step === 3 && (
-        <Step3Schedule onBack={goBack} cleanerData={cleanerData} />
+        <Step3Schedule onNext={goNext} onBack={goBack} cleanerData={cleanerData} />
+      )}
+      {step === 4 && (
+        <Step4Verification onBack={goBack} cleanerData={cleanerData} />
       )}
     </div>
   );

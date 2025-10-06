@@ -6,10 +6,13 @@ import { collection, getDocs, doc, updateDoc, query, where } from "firebase/fire
 
 interface Cleaner {
   id: string;
-  username: string;
-  email: string;
+  username?: string;
+  email?: string;
   status: string;
   rating?: number;
+  businessId?: string;
+  insuranceCertificateUrl?: string;
+  otherDocsUrl?: string;
 }
 
 export default function AdminDashboard() {
@@ -50,7 +53,6 @@ export default function AdminDashboard() {
     fetchCleaners();
   }, []);
 
-  // Approve a cleaner
   const approveCleaner = async (id: string) => {
     try {
       const cleanerRef = doc(db, "cleaners", id);
@@ -61,7 +63,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Revert approved cleaner back to pending
   const revertCleaner = async (id: string) => {
     try {
       const cleanerRef = doc(db, "cleaners", id);
@@ -71,6 +72,49 @@ export default function AdminDashboard() {
       console.error("Error reverting cleaner:", err);
     }
   };
+
+  const renderCleanerInfo = (cleaner: Cleaner) => (
+    <div>
+      <p className="font-semibold">{cleaner.username ?? "Unnamed Cleaner"}</p>
+      <p className="text-sm text-gray-600">{cleaner.email}</p>
+
+      {cleaner.businessId && (
+        <p className="text-sm">Business ID: {cleaner.businessId}</p>
+      )}
+
+      {cleaner.insuranceCertificateUrl && (
+        <p className="text-sm">
+          <a
+            href={cleaner.insuranceCertificateUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            View Insurance Certificate
+          </a>
+        </p>
+      )}
+
+      {cleaner.otherDocsUrl && (
+        <p className="text-sm">
+          <a
+            href={cleaner.otherDocsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            View Other Documents
+          </a>
+        </p>
+      )}
+
+      {cleaner.rating !== undefined && (
+        <p className="text-sm text-gray-600">
+          Rating: {cleaner.rating ?? "Not rated yet"}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-8">
@@ -87,10 +131,7 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {pendingCleaners.map(cleaner => (
               <div key={cleaner.id} className="p-4 border rounded flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{cleaner.username}</p>
-                  <p className="text-sm text-gray-600">{cleaner.email}</p>
-                </div>
+                {renderCleanerInfo(cleaner)}
                 <button
                   className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                   onClick={() => approveCleaner(cleaner.id)}
@@ -114,13 +155,7 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {approvedCleaners.map(cleaner => (
               <div key={cleaner.id} className="p-4 border rounded flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{cleaner.username}</p>
-                  <p className="text-sm text-gray-600">{cleaner.email}</p>
-                  <p className="text-sm text-gray-600">
-                    Rating: {cleaner.rating ?? "Not rated yet"}
-                  </p>
-                </div>
+                {renderCleanerInfo(cleaner)}
                 <button
                   className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
                   onClick={() => revertCleaner(cleaner.id)}
