@@ -1,7 +1,9 @@
-// ⚠️ Only run Firebase in the browser
+// lib/firebase.ts
+"use client"; // ensure this file is treated as client-side
+
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -12,10 +14,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-let app;
-if (typeof window !== "undefined") {
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-}
+// Initialize app lazily (only in browser)
+const app = typeof window !== "undefined" ? (!getApps().length ? initializeApp(firebaseConfig) : getApp()) : undefined;
 
-export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
+// Export instances, assert non-null for TypeScript
+export const auth: Auth = app ? getAuth(app) : ({} as Auth);
+export const db: Firestore = app ? getFirestore(app) : ({} as Firestore);
