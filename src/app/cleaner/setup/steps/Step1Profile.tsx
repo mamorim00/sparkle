@@ -5,18 +5,18 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app } from "@/lib/firebase";
 
 interface Step1ProfileProps {
-    onNext: (data: { name: string; photoUrl: string }) => void;
-    initialData: { name: string };
+  onNext: (data: { username: string; photoUrl: string }) => void;
+  initialData: { username: string };
 }
 
 export default function Step1Profile({ onNext, initialData }: Step1ProfileProps) {
-  const [name, setName] = useState(initialData.name || "");
+  const [username, setUsername] = useState(initialData.username || "");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleContinue = async () => {
-    if (!name.trim() || !photoFile) {
-      alert("Please provide a name and profile picture.");
+    if (!username.trim() || !photoFile) {
+      alert("Please provide a username and profile picture.");
       return;
     }
 
@@ -27,7 +27,7 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
     const photoUrl = await getDownloadURL(storageRef);
 
     setUploading(false);
-    onNext({ name, photoUrl });
+    onNext({ username, photoUrl });
   };
 
   return (
@@ -35,10 +35,10 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
       <h2 className="text-xl font-bold mb-4">Step 1: Your Profile</h2>
       <input
         type="text"
-        placeholder="Full Name"
+        placeholder="Username"
         className="border p-2 rounded w-full mb-4"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
       />
       <input
         type="file"

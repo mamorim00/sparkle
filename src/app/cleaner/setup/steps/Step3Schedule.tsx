@@ -5,10 +5,25 @@ import { auth } from "@/lib/firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
 import CleanerDashboard from "@/app/cleaner-dashboard/page";
 
+// Your types
+interface ScheduleItem {
+  date: string;
+  start: string;
+  end: string;
+}
+
+interface CleanerProfile {
+  username: string;
+  photoUrl: string;
+  pricePerHour: number;
+  phone: string;
+  schedule: ScheduleItem[];
+}
+
 interface Step3ScheduleProps {
   onBack: () => void;
-  onNext: (data: any) => void;
-  cleanerData: any;
+  onNext: (data: { schedule: ScheduleItem[] }) => void;
+  cleanerData: CleanerProfile;
 }
 
 export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3ScheduleProps) {
@@ -22,9 +37,8 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
   }, []);
 
   const handleNext = () => {
-    // Example: here you’d collect schedule info from dashboard or inputs
     const scheduleData = {
-      schedule: cleanerData.schedule || {}, // replace with actual schedule state
+      schedule: cleanerData.schedule || [],
     };
     onNext(scheduleData);
   };

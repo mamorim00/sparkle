@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-09-30.clover", // latest stable
-});
+export const dynamic = "force-dynamic"; // ✅ allows serverless function
+
 
 export async function POST(req: NextRequest) {
   try {
+    // ✅ Initialize Stripe here (lazy load)
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+      apiVersion: "2025-09-30.clover",
+    });
+
     const body = await req.json();
     const {
       totalAmount,
@@ -39,20 +43,19 @@ export async function POST(req: NextRequest) {
     ];
 
     const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: lineItems,
-        mode: "payment",
-        success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get("origin")}/cancel`,
-        customer_email: userEmail || undefined,
-        metadata: {
-          userId: userId || "",
-          userName: userName || "",
-          userPhone: userPhone || "",
-          bookingDetails: JSON.stringify(bookingDetails), // 🔑 add this
-        },
-      });
-      
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}/cancel`,
+      customer_email: userEmail || undefined,
+      metadata: {
+        userId: userId || "",
+        userName: userName || "",
+        userPhone: userPhone || "",
+        bookingDetails: JSON.stringify(bookingDetails),
+      },
+    });
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (error) {
@@ -66,5 +69,3 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
 }
-
-

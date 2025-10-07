@@ -7,9 +7,32 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
 
+// Schedule and profile types
+interface ScheduleItem {
+  date: string;
+  start: string;
+  end: string;
+}
+
+interface CleanerProfile {
+  username: string;
+  photoUrl: string;
+  pricePerHour: number;
+  phone: string;
+  schedule: ScheduleItem[];
+}
+
+// Extend CleanerProfile with optional verification fields
+interface CleanerVerification extends CleanerProfile {
+  businessId?: string;
+  insuranceCertificateUrl?: string;
+  otherDocsUrl?: string;
+  status?: string;
+}
+
 interface Step4VerificationProps {
   onBack: () => void;
-  cleanerData: any;
+  cleanerData: CleanerProfile;
 }
 
 export default function Step4Verification({ onBack, cleanerData }: Step4VerificationProps) {
@@ -54,18 +77,18 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
       );
     }
 
-    await setDoc(
-      doc(db, "cleaners", user.uid),
-      {
-        ...cleanerData,
-        businessId,
-        insuranceCertificateUrl: insuranceUrl,
-        otherDocsUrl,
-        status: "pending",
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const updatedData: CleanerVerification = {
+      ...cleanerData,
+      businessId,
+      insuranceCertificateUrl: insuranceUrl,
+      otherDocsUrl,
+      status: "pending",
+    };
+
+    await setDoc(doc(db, "cleaners", user.uid), {
+      ...updatedData,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
 
     setSaving(false);
     router.push("/cleaner/profile");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { auth, db } from "../../../lib/firebase";
 import {
   signInWithEmailAndPassword,
@@ -14,28 +14,27 @@ export default function AuthPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState(""); 
+  const [username, setUsername] = useState("");
   const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState(""); // For success messages
+  const [message, setMessage] = useState("");
   const [isAdminMode, setIsAdminMode] = useState(false);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
+  // Read query params client-side inside useEffect
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
     const modeFromQuery = searchParams.get("mode");
     const roleFromQuery = searchParams.get("role");
 
     if (roleFromQuery === "admin") setIsAdminMode(true);
-
-    if (modeFromQuery === "register") setIsRegister(true);
-    else setIsRegister(false);
+    setIsRegister(modeFromQuery === "register");
 
     if (roleFromQuery === "cleaner") setRole("cleaner");
     else if (roleFromQuery === "customer") setRole("customer");
     else if (roleFromQuery === "admin") setRole("admin");
-  }, [searchParams]);
+  }, []);
 
   const createUserDoc = async (uid: string) => {
     if (role === "cleaner") {
@@ -68,11 +67,11 @@ export default function AuthPage() {
     e.preventDefault();
     setError("");
     setMessage("");
+
     try {
       if (isRegister) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-
         await createUserDoc(user.uid);
 
         if (role === "cleaner") {
@@ -81,7 +80,7 @@ export default function AuthPage() {
         } else if (role === "admin") {
           router.push("/admin/dashboard");
         } else {
-          router.push("/"); // customer
+          router.push("/");
         }
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -114,8 +113,12 @@ export default function AuthPage() {
 
         router.push("/");
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
     }
   };
 
@@ -129,8 +132,12 @@ export default function AuthPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage("Password reset email sent! Check your inbox.");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred while sending reset email.");
+      }
     }
   };
 
@@ -189,7 +196,6 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* Forgot password link only on login */}
         {!isRegister && (
           <p
             className="text-right mt-2 text-sm text-primary underline cursor-pointer"
@@ -199,7 +205,6 @@ export default function AuthPage() {
           </p>
         )}
 
-        {/* Single alternate role link below the form */}
         {isRegister && !isAdminMode && (
           <p className="text-center mt-2 text-sm text-gray-700">
             Register as{" "}
@@ -212,7 +217,6 @@ export default function AuthPage() {
           </p>
         )}
 
-        {/* Toggle between login/register */}
         <p className="text-center mt-4">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
           <span

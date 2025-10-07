@@ -1,22 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { auth, db, storage } from "@/lib/firebase";
 import { onAuthStateChanged, User, updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CleanerSchedule from "@/components/CleanerAvailability";
 
+// Define types for schedule items and cleaner profile
+interface ScheduleItem {
+  date: string;
+  start: string;
+  end: string;
+}
+
+interface CleanerProfile {
+  username: string;
+  photoUrl: string;
+  pricePerHour: number;
+  phone: string;
+  schedule: ScheduleItem[];
+}
+
 export default function CleanerProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<CleanerProfile>({
     username: "",
     photoUrl: "",
     pricePerHour: 0,
     phone: "",
-    schedule: [] as any[],
+    schedule: [],
   });
 
   useEffect(() => {
@@ -26,7 +42,7 @@ export default function CleanerProfilePage() {
         const cleanerRef = doc(db, "cleaners", firebaseUser.uid);
         const snap = await getDoc(cleanerRef);
         if (snap.exists()) {
-          setProfile(snap.data() as any);
+          setProfile(snap.data() as CleanerProfile);
         }
       }
       setLoading(false);
@@ -40,10 +56,14 @@ export default function CleanerProfilePage() {
     setSaving(true);
 
     const cleanerRef = doc(db, "cleaners", user.uid);
-    await setDoc(cleanerRef, {
-      ...profile,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+    await setDoc(
+      cleanerRef,
+      {
+        ...profile,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     setSaving(false);
     alert("Profile updated!");
@@ -55,7 +75,7 @@ export default function CleanerProfilePage() {
     const fileRef = ref(storage, `cleaners/${Date.now()}-${file.name}`);
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
-    setProfile(prev => ({ ...prev, photoUrl: url }));
+    setProfile((prev) => ({ ...prev, photoUrl: url }));
     await updateProfile(user, { photoURL: url });
   };
 
@@ -75,7 +95,9 @@ export default function CleanerProfilePage() {
           type="text"
           className="w-full border px-3 py-2 rounded"
           value={profile.username}
-          onChange={e => setProfile(prev => ({ ...prev, username: e.target.value }))}
+          onChange={(e) =>
+            setProfile((prev) => ({ ...prev, username: e.target.value }))
+          }
         />
 
         <label className="block mb-1 font-semibold">Phone</label>
@@ -83,7 +105,9 @@ export default function CleanerProfilePage() {
           type="text"
           className="w-full border px-3 py-2 rounded"
           value={profile.phone}
-          onChange={e => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+          onChange={(e) =>
+            setProfile((prev) => ({ ...prev, phone: e.target.value }))
+          }
         />
 
         <label className="block mb-1 font-semibold">Price / Hour (€)</label>
@@ -91,13 +115,24 @@ export default function CleanerProfilePage() {
           type="number"
           className="w-full border px-3 py-2 rounded"
           value={profile.pricePerHour}
-          onChange={e => setProfile(prev => ({ ...prev, pricePerHour: Number(e.target.value) }))}
+          onChange={(e) =>
+            setProfile((prev) => ({
+              ...prev,
+              pricePerHour: Number(e.target.value),
+            }))
+          }
         />
 
         <label className="block mb-1 font-semibold">Profile Photo</label>
         <input type="file" onChange={handlePhotoChange} />
         {profile.photoUrl && (
-          <img src={profile.photoUrl} alt="Profile" className="w-32 h-32 mt-2 rounded-full object-cover" />
+          <Image
+            src={profile.photoUrl}
+            alt="Profile"
+            width={128}
+            height={128}
+            className="w-32 h-32 mt-2 rounded-full object-cover"
+          />
         )}
 
         <button

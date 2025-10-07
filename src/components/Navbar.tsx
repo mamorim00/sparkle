@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { auth } from "../lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import Link from "next/link";
 import { useLocation } from "../context/LocationContext";
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null); // ✅ typed properly
   const [showLocationPopup, setShowLocationPopup] = useState(false);
 
   const { location, setLocation } = useLocation();
@@ -31,7 +31,6 @@ export default function Navbar() {
   return (
     <>
       <nav className="bg-primary-dark text-white shadow px-6 py-4 flex justify-between items-center">
-
         <div className="flex items-center space-x-4">
           <Link href="/" className="text-2xl font-bold text-primary">
             Sparkle

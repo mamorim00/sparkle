@@ -71,7 +71,7 @@ const addHours = (time: string, hours: number) => {
 const generateAvailableSlots = (slots: TimeSlot[], durationHours: number) => {
   const result: string[] = [];
   const requiredMinutes = durationHours * 60;
-  for (let slot of slots) {
+  for (const slot of slots) { // ✅ changed `let` → `const`
     const startMinutes = timeToMinutes(slot.start);
     const endMinutes = timeToMinutes(slot.end);
     if (endMinutes - startMinutes < requiredMinutes) continue;
@@ -83,6 +83,7 @@ const generateAvailableSlots = (slots: TimeSlot[], durationHours: number) => {
   }
   return result;
 };
+
 const getWeekdayName = (date: Date) => date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
 
 // DELETED: getNextAvailableSlot is no longer needed

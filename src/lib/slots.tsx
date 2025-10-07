@@ -4,7 +4,7 @@ export type WorkingHours = {
   
   export function generateSlots(start: string, end: string, intervalMinutes = 60) {
     const slots: { start: string; end: string }[] = [];
-    let current = new Date(`1970-01-01T${start}:00`);
+    const current = new Date(`1970-01-01T${start}:00`);
     const endDate = new Date(`1970-01-01T${end}:00`);
   
     while (current < endDate) {

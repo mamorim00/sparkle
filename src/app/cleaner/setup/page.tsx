@@ -6,19 +6,38 @@ import Step2Price from "./steps/Step2Price";
 import Step3Schedule from "./steps/Step3Schedule";
 import Step4Verification from "./steps/Step4Verification";
 
+// Schedule and profile types
+interface ScheduleItem {
+  date: string;
+  start: string;
+  end: string;
+}
+
+interface CleanerProfile {
+  username: string;
+  photoUrl: string;
+  pricePerHour: number;
+  phone: string;
+  schedule: ScheduleItem[];
+  businessId?: string;
+  insuranceCertificateUrl?: string;
+  otherDocsUrl?: string;
+}
+
 export default function CleanerSetupPage() {
   const [step, setStep] = useState(1);
-  const [cleanerData, setCleanerData] = useState({
-    name: "",
+  const [cleanerData, setCleanerData] = useState<CleanerProfile>({
+    username: "",
     photoUrl: "",
     pricePerHour: 0,
-    schedule: {},
+    phone: "",
+    schedule: [],
     businessId: "",
     insuranceCertificateUrl: "",
     otherDocsUrl: "",
   });
 
-  const goNext = (data: Partial<typeof cleanerData>) => {
+  const goNext = (data: Partial<CleanerProfile>) => {
     setCleanerData(prev => ({ ...prev, ...data }));
     setStep(step + 1);
   };
