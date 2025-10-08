@@ -105,9 +105,13 @@ export default function AuthPage() {
           const userData = userSnap.data();
           if (userData?.role === "admin") {
             router.push("/admin/dashboard");
+          } else if (userData?.role === "cleaner") {
+            router.push("/cleaner/dashboard");
+          } else if (userData?.role === "customer") {
+            router.push("/user/bookings");
           } else {
             router.push("/");
-          }
+          }          
           return;
         }
 

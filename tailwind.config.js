@@ -7,13 +7,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#b6e1fa',       // soft blue background
-        'primary-light': '#eaf6fd', // near-white blue for cards
-        'primary-dark': '#406882', // deep muted blue for headers
-        accent: '#3b82f6',        // stronger blue for links/buttons
-        highlight: '#fca311',     // warm orange for CTAs
-        neutral: '#1f2937',       // dark gray for text
-      },   
+        // Professional slate grays
+        primary: '#f8fafc',         // slate-50 - ultra light background
+        'primary-light': '#f1f5f9', // slate-100 - card backgrounds
+        'primary-dark': '#334155',  // slate-700 - dark headings
+
+
+            accent: '#3b82f6',        // blue-500 - primary button background
+      'accent-dark': '#1e40af',  // blue-800 - hover background (darker for contrast)
+      'accent-light': '#60a5fa', // blue-400 - lighter accents
+
+
+        
+        // Supporting colors
+        highlight: '#fbbf24',       // amber-400 - warm CTAs/badges
+        neutral: '#1e293b',         // slate-800 - body text
+        'neutral-light': '#64748b', // slate-500 - secondary text
+      },
     },
   },
   plugins: [],

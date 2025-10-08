@@ -3,7 +3,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { db } from "../../../lib/firebase";
+import { db, auth } from "../../../lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+
 import {
   doc,
   getDoc,
@@ -43,6 +45,12 @@ interface CleaningType {
 const CLEANING_TYPES: CleaningType[] = [
   { name: "Simple Clean", durationHours: 2, priceMultiplier: 1 },
   { name: "Deep Clean", durationHours: 6, priceMultiplier: 2 },
+  { name: "Move-Out Clean", durationHours: 2, priceMultiplier: 1 },
+  { name: "Office Clean", durationHours: 6, priceMultiplier: 2 },
+  { name: "Window Cleaning", durationHours: 2, priceMultiplier: 1 },
+  { name: "Carpet Cleaning", durationHours: 6, priceMultiplier: 2 },
+  { name: "Post-Construction", durationHours: 2, priceMultiplier: 1 },
+  { name: "Laundry Service", durationHours: 2, priceMultiplier: 1 },
 ];
 
 // --- CONSTANTS ---
@@ -50,13 +58,16 @@ const MAX_SEARCH_LIMIT = 90; // The maximum number of days into the future to se
 // --------------------------------------------------------
 
 
+
 // --- HELPER FUNCTIONS (Modified) ---
 
 // Helper functions (time conversion, etc.) remain unchanged
-const timeToMinutes = (time: string) => {
+const timeToMinutes = (time?: string) => {
+  if (!time) return 0; // fallback if undefined
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 };
+
 const minutesToTime = (minutes: number) => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -68,10 +79,12 @@ const addHours = (time: string, hours: number) => {
   end.setHours(h + hours, m, 0, 0);
   return `${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`;
 };
+
 const generateAvailableSlots = (slots: TimeSlot[], durationHours: number) => {
   const result: string[] = [];
   const requiredMinutes = durationHours * 60;
-  for (const slot of slots) { // ✅ changed `let` → `const`
+  for (const slot of slots) {
+    if (!slot.start || !slot.end) continue; // skip invalid slots
     const startMinutes = timeToMinutes(slot.start);
     const endMinutes = timeToMinutes(slot.end);
     if (endMinutes - startMinutes < requiredMinutes) continue;
@@ -83,6 +96,7 @@ const generateAvailableSlots = (slots: TimeSlot[], durationHours: number) => {
   }
   return result;
 };
+
 
 const getWeekdayName = (date: Date) => date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
 
@@ -117,6 +131,16 @@ export default function BookPage() {
   const params = useParams<{ cleanerId?: string }>();
   const router = useRouter();
   const cleanerId = params?.cleanerId ?? "";
+
+  // --- USER STATE (MUST BE INSIDE COMPONENT) ---
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const [cleaner, setCleaner] = useState<Cleaner | null>(null);
   const [selectedCleaning, setSelectedCleaning] = useState<CleaningType>(CLEANING_TYPES[0]);
@@ -257,17 +281,29 @@ export default function BookPage() {
   const handleBook = async (dayKey: string, start: string) => {
     if (!cleaner) return;
     const totalPrice = cleaner.pricePerHour * selectedCleaning.durationHours * selectedCleaning.priceMultiplier;
-    const params = {
+  
+    const params: Record<string, string> = {
+      cleanerId: cleaner.id,
       cleanerName: cleaner.name,
       date: dayKey,
-      start: start,
+      start,
       type: selectedCleaning.name,
       duration: selectedCleaning.durationHours.toString(),
       totalPrice: totalPrice.toFixed(2),
     };
+  
+    // Include user info if logged in
+    if (user) {
+      params.userId = user.uid;
+      params.userEmail = user.email ?? "";
+    } else if (guestName) {
+      params.guestName = guestName;
+    }
+  
     const searchParams = new URLSearchParams(params);
     router.push(`/checkout?${searchParams.toString()}`);
   };
+  
 
 
   if (!cleaner) return <p>Loading...</p>;
@@ -297,13 +333,15 @@ export default function BookPage() {
       </div>
 
       {/* Guest Name */}
-      <input
-        type="text"
-        placeholder="Your name (optional)"
-        value={guestName}
-        onChange={e => setGuestName(e.target.value)}
-        className="border p-2 rounded mb-4 w-full"
-      />
+      {!user && (
+        <input
+          type="text"
+          placeholder="Your name (for guest checkout)"
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          className="border p-2 rounded mb-4 w-full"
+        />
+      )}
 
       {/* Cleaning Type */}
       <div className="mb-4">

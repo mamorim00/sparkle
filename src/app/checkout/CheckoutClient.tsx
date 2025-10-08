@@ -1,33 +1,43 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   onAuthStateChanged,
-  signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
   User,
 } from "firebase/auth";
 import { auth } from "../../lib/firebase";
-import { Zap, Lock } from "lucide-react";
+import { Zap, Lock, User as UserIcon, Mail, Phone, Eye, EyeOff } from "lucide-react";
 
+// --- Interfaces ---
 type BookingDetails = {
+  cleanerId: string;
   cleanerName: string;
   date: string;
   start: string;
+  end: string;
   duration: number;
   cleaningType: string;
   totalPrice: number;
   formattedPrice: string;
 } | null;
 
-type GuestData = { name: string; email: string; phone: string };
+type ContactData = { name: string; email: string; phone: string };
 type AuthData = { email: string; password: string; name: string };
 
-// Helper function to parse booking details from URL
+// --- Helper function ---
+const addHours = (time: string, hours: number) => {
+  const [h, m] = time.split(":").map(Number);
+  const date = new Date();
+  date.setHours(h + hours, m, 0, 0);
+  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+};
+
 const getBookingDetails = (params: URLSearchParams): BookingDetails => {
+  const cleanerId = params.get("cleanerId");
   const cleanerName = params.get("cleanerName");
   const date = params.get("date");
   const start = params.get("start");
@@ -35,21 +45,21 @@ const getBookingDetails = (params: URLSearchParams): BookingDetails => {
   const durationStr = params.get("duration");
   const totalPriceStr = params.get("totalPrice");
 
-  if (!cleanerName || !date || !start || !typeName || !durationStr || !totalPriceStr) {
+  if (!cleanerId || !cleanerName || !date || !start || !typeName || !durationStr || !totalPriceStr) {
     return null;
   }
 
   const totalPrice = parseFloat(totalPriceStr);
   const duration = parseInt(durationStr, 10);
 
-  if (isNaN(totalPrice) || isNaN(duration) || totalPrice <= 0) {
-    return null;
-  }
+  if (isNaN(totalPrice) || isNaN(duration) || totalPrice <= 0) return null;
 
   return {
+    cleanerId,
     cleanerName,
     date,
     start,
+    end: addHours(start, duration),
     duration,
     cleaningType: typeName,
     totalPrice,
@@ -57,83 +67,94 @@ const getBookingDetails = (params: URLSearchParams): BookingDetails => {
   };
 };
 
+// --- Component ---
 export default function CheckoutClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState<"guest" | "login" | "register">("guest");
-  const [guestData, setGuestData] = useState<GuestData>({ name: "", email: "", phone: "" });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [contactData, setContactData] = useState<ContactData>({ name: "", email: "", phone: "" });
   const [authData, setAuthData] = useState<AuthData>({ email: "", password: "", name: "" });
   const [error, setError] = useState("");
 
   const bookingDetails = useMemo<BookingDetails>(() => getBookingDetails(searchParams), [searchParams]);
 
-  // Firebase Authentication listener
+  // Prefill guest data from URL
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
+    if (!currentUser) {
+      const nameParam = searchParams.get("userName");
+      const emailParam = searchParams.get("userEmail");
+      setContactData({
+        name: nameParam || "",
+        email: emailParam || "",
+        phone: "",
+      });
+    }
+  }, [searchParams, currentUser]);
+
+  // Listen for auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      setCurrentUser(user);
       if (user) {
-        setCurrentUser(user);
-        if (!user.isAnonymous) {
-          setGuestData({
-            name: user.displayName || "",
-            email: user.email || "",
-            phone: user.phoneNumber || "",
-          });
-        }
-      } else {
-        // ensure anonymous user exists for guest checkout
-        try {
-          await signInAnonymously(auth);
-        } catch (err) {
-          // non-fatal; show message if needed
-          console.error("Anonymous sign-in failed", err);
-        }
+        setContactData({
+          name: user.displayName || "",
+          email: user.email || "",
+          phone: user.phoneNumber || "",
+        });
       }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // --- AUTH HANDLERS ---
+  // --- Auth handlers ---
   const handleRegister = async () => {
     setError("");
+    if (!authData.name || !authData.email || !authData.password) {
+      setError("Please fill in all registration fields.");
+      return;
+    }
+    if (authData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        authData.email,
-        authData.password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, authData.email, authData.password);
       await updateProfile(userCredential.user, { displayName: authData.name });
-      setAuthMode("guest");
+      setError("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Registration failed.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Registration failed.");
     }
   };
 
   const handleLogin = async () => {
     setError("");
+    if (!authData.email || !authData.password) {
+      setError("Please provide an email and password.");
+      return;
+    }
     try {
       await signInWithEmailAndPassword(auth, authData.email, authData.password);
-      setAuthMode("guest");
+      setError("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Login failed.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Login failed.");
     }
   };
 
-  // --- CHECKOUT HANDLER ---
+  // --- Checkout handler ---
   const handleCheckout = async () => {
     if (!bookingDetails) {
       setError("Booking data is missing. Please go back and try again.");
       return;
     }
 
-    if (currentUser?.isAnonymous) {
-      if (!guestData.name.trim() || (!guestData.email.trim() && !guestData.phone.trim())) {
-        setError("Please provide your name and either an email or a phone number.");
-        return;
-      }
+    if (!currentUser && (!contactData.name.trim() || !contactData.email.trim())) {
+      setError("Please provide your name and email.");
+      return;
     }
 
     setError("");
@@ -142,18 +163,18 @@ export default function CheckoutClient() {
     const checkoutPayload = {
       totalAmount: bookingDetails.totalPrice,
       bookingDetails: {
+        cleanerId: bookingDetails.cleanerId,
         cleanerName: bookingDetails.cleanerName,
         date: bookingDetails.date,
         start: bookingDetails.start,
+        end: bookingDetails.end,
         duration: bookingDetails.duration,
         cleaningType: bookingDetails.cleaningType,
       },
-      userId: currentUser?.uid,
-      userName: currentUser?.isAnonymous
-        ? guestData.name
-        : currentUser?.displayName || currentUser?.email,
-      userEmail: currentUser?.isAnonymous ? guestData.email : currentUser?.email,
-      userPhone: currentUser?.isAnonymous ? guestData.phone : currentUser?.phoneNumber,
+      userId: currentUser ? currentUser.uid : null,
+      userName: currentUser ? (currentUser.displayName || currentUser.email) : contactData.name,
+      userEmail: currentUser ? currentUser.email : contactData.email,
+      userPhone: currentUser ? currentUser.phoneNumber : contactData.phone || "",
     };
 
     try {
@@ -164,174 +185,312 @@ export default function CheckoutClient() {
       });
 
       const parsed = await response.json();
-      const { url, error: apiError } = parsed as { url?: string; error?: string };
+      if (parsed.error) throw new Error(parsed.error);
+      if (!parsed.url) throw new Error("Checkout URL missing from server response.");
 
-      if (apiError) throw new Error(apiError);
-      if (!url) throw new Error("Checkout URL missing from server response.");
-
-      // redirect to Stripe Checkout
-      window.location.href = url;
+      window.location.href = parsed.url;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Payment failed.";
-      setError(`Payment failed: ${message}`);
+      setError(`Payment failed: ${err instanceof Error ? err.message : "Unknown error"}`);
       setLoading(false);
     }
   };
 
-  // --- UI RENDERING ---
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">Preparing secure checkout...</p>
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-indigo-600"></div>
+        <p className="text-lg mt-4 text-gray-600">Preparing secure checkout...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!bookingDetails) {
-    return (
-      <div className="max-w-md mx-auto p-6 mt-10 bg-red-50 border border-red-200 rounded-xl">
-        <h1 className="text-xl font-bold text-red-700">Booking Error</h1>
-        <p className="text-red-500 mt-2">Could not load booking details from the URL.</p>
-      </div>
-    );
-  }
+  if (!bookingDetails) return (
+    <div className="max-w-md mx-auto p-6 mt-10 bg-red-50 border border-red-200 rounded-xl">
+      <h1 className="text-xl font-bold text-red-700">Booking Error</h1>
+      <p className="text-red-500 mt-2">Could not load booking details. Please try again.</p>
+      <button onClick={() => router.back()} className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition">
+        Go Back
+      </button>
+    </div>
+  );
 
-  const isButtonDisabled =
-    loading ||
-    (currentUser?.isAnonymous &&
-      (!guestData.name.trim() || (!guestData.email.trim() && !guestData.phone.trim())));
+  const isButtonDisabled = loading || (!currentUser && (!contactData.name.trim() || !contactData.email.trim()));
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl p-6 md:p-8">
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-6 flex items-center">
-          <Zap className="w-6 h-6 mr-2 text-indigo-600" /> Secure Checkout
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-12">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 md:p-10">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
+          <Zap className="w-7 h-7 mr-3 text-indigo-600" /> Secure Checkout
         </h1>
 
-        {/* ORDER SUMMARY */}
-        <section className="mb-6 border-b pb-4">
-          <h2 className="text-xl font-semibold mb-3 text-gray-700">Order Summary</h2>
-          <div className="flex justify-between items-center pt-3 border-t mt-3">
-            <span className="font-bold text-lg text-gray-800">Total Price</span>
-            <span className="font-extrabold text-indigo-600 text-2xl">
-              {bookingDetails.formattedPrice}
-            </span>
+        {/* Order Summary */}
+        <section className="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+          <h2 className="font-semibold text-gray-900 mb-4 text-lg">Order Summary</h2>
+          <div className="space-y-2 text-gray-700">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Cleaner:</span>
+              <span className="font-medium">{bookingDetails.cleanerName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Date:</span>
+              <span className="font-medium">{bookingDetails.date}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Time:</span>
+              <span className="font-medium">{bookingDetails.start} - {bookingDetails.end}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Service:</span>
+              <span className="font-medium">{bookingDetails.cleaningType}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Duration:</span>
+              <span className="font-medium">{bookingDetails.duration} hours</span>
+            </div>
+            <div className="pt-3 mt-3 border-t border-gray-300 flex justify-between items-center">
+              <span className="text-lg font-semibold text-gray-900">Total:</span>
+              <span className="text-2xl font-bold text-indigo-600">{bookingDetails.formattedPrice}</span>
+            </div>
           </div>
         </section>
 
-        {/* AUTH / CONTACT SECTION */}
-        <section className="mb-6 bg-indigo-50 p-4 rounded-lg">
-          {!currentUser?.isAnonymous ? (
-            <p className="text-green-700 font-semibold">
-              Logged in as {currentUser?.email || currentUser?.displayName}
-            </p>
-          ) : authMode === "guest" ? (
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Name"
-                className="w-full border rounded p-2"
-                value={guestData.name}
-                onChange={(e) => setGuestData({ ...guestData, name: e.target.value })}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                className="w-full border rounded p-2"
-                value={guestData.email}
-                onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
-              />
-              <input
-                type="tel"
-                placeholder="Phone"
-                className="w-full border rounded p-2"
-                value={guestData.phone}
-                onChange={(e) => setGuestData({ ...guestData, phone: e.target.value })}
-              />
-
-              <button
-                onClick={() => setAuthMode("login")}
-                className="text-sm text-indigo-600 hover:underline mt-2"
-              >
-                Already have an account? Log in or register
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {authMode === "register" && (
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  className="w-full border rounded p-2"
-                  value={authData.name}
-                  onChange={(e) => setAuthData({ ...authData, name: e.target.value })}
-                />
-              )}
-              <input
-                type="email"
-                placeholder="Email"
-                className="w-full border rounded p-2"
-                value={authData.email}
-                onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full border rounded p-2"
-                value={authData.password}
-                onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
-              />
-
-              {authMode === "login" ? (
-                <button
-                  onClick={handleLogin}
-                  className="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700"
-                >
-                  Sign In
-                </button>
-              ) : (
-                <button
-                  onClick={handleRegister}
-                  className="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700"
-                >
-                  Register
-                </button>
-              )}
-
-              <div className="flex justify-between text-sm mt-2">
-                <button
-                  onClick={() =>
-                    setAuthMode(authMode === "login" ? "register" : "login")
-                  }
-                  className="text-indigo-600 hover:underline"
-                >
-                  {authMode === "login"
-                    ? "Create new account"
-                    : "Already have an account? Log in"}
-                </button>
-                <button
-                  onClick={() => setAuthMode("guest")}
-                  className="text-gray-600 hover:underline"
-                >
-                  Continue as Guest
-                </button>
+        {/* Auth/Guest Section */}
+        {currentUser ? (
+          <section className="mb-8 p-6 bg-green-50 rounded-xl border border-green-200">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+                <UserIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Logged in as</h3>
+                <p className="text-sm text-gray-600">{currentUser.displayName || currentUser.email}</p>
               </div>
             </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <section className="mb-8">
+            {/* Mode Toggle Buttons */}
+            <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => {
+                  setAuthMode("guest");
+                  setError("");
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                  authMode === "guest"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Continue as Guest
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("login");
+                  setError("");
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                  authMode === "login"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Login
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("register");
+                  setError("");
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                  authMode === "register"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Register
+              </button>
+            </div>
 
-        {error && (
-          <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>
+            {/* Guest Form */}
+            {authMode === "guest" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={contactData.name}
+                      onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
+                      placeholder="Enter your name"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={contactData.email}
+                      onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                      placeholder="your@email.com"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number (optional)</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={contactData.phone}
+                      onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
+                      placeholder="+358 123 456 789"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Login Form */}
+            {authMode === "login" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={authData.email}
+                      onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
+                      placeholder="your@email.com"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={authData.password}
+                      onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
+                      placeholder="Enter your password"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogin}
+                  className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                >
+                  Login
+                </button>
+              </div>
+            )}
+
+            {/* Register Form */}
+            {authMode === "register" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={authData.name}
+                      onChange={(e) => setAuthData({ ...authData, name: e.target.value })}
+                      placeholder="Enter your name"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={authData.email}
+                      onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
+                      placeholder="your@email.com"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={authData.password}
+                      onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
+                      placeholder="At least 6 characters"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRegister}
+                  className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+          </section>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Checkout Button */}
         <button
           onClick={handleCheckout}
-          className="w-full flex items-center justify-center bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400"
           disabled={isButtonDisabled}
+          className="w-full flex items-center justify-center bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 active:bg-indigo-800 transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {loading ? "Processing..." : "Pay Now with Stripe"}
-          <Lock className="w-4 h-4 ml-2" />
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Processing...
+            </span>
+          ) : (
+            <>
+              Pay Now with Stripe
+              <Lock className="w-5 h-5 ml-2" />
+            </>
+          )}
         </button>
+
+        <p className="text-center text-sm text-gray-500 mt-4">
+          Secured by Stripe. Your payment information is encrypted and secure.
+        </p>
       </div>
     </div>
   );

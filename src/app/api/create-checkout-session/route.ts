@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-export const dynamic = "force-dynamic"; // ✅ allows serverless function
-
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    // ✅ Initialize Stripe here (lazy load)
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
       apiVersion: "2025-09-30.clover",
     });
@@ -21,9 +19,16 @@ export async function POST(req: NextRequest) {
       userPhone,
     } = body;
 
-    if (!totalAmount || !bookingDetails) {
+    if (
+      !totalAmount ||
+      !bookingDetails ||
+      !bookingDetails.cleanerId ||
+      !bookingDetails.date ||
+      !bookingDetails.start ||
+      !bookingDetails.end
+    ) {
       return NextResponse.json(
-        { error: "Invalid booking data." },
+        { error: "Invalid or incomplete booking data." },
         { status: 400 }
       );
     }
@@ -33,8 +38,8 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: "eur",
           product_data: {
-            name: "Cleaning Booking",
-            description: `Cleaning with ${bookingDetails.cleanerName} on ${bookingDetails.date} at ${bookingDetails.start}`,
+            name: `${bookingDetails.cleaningType} with ${bookingDetails.cleanerName}`,
+            description: `Scheduled for ${bookingDetails.date} from ${bookingDetails.start} to ${bookingDetails.end}`,
           },
           unit_amount: Math.round(totalAmount * 100),
         },
@@ -47,13 +52,17 @@ export async function POST(req: NextRequest) {
       line_items: lineItems,
       mode: "payment",
       success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/cancel`,
+      cancel_url: `${req.headers.get("origin")}/`,
       customer_email: userEmail || undefined,
       metadata: {
-        userId: userId || "",
-        userName: userName || "",
-        userPhone: userPhone || "",
-        bookingDetails: JSON.stringify(bookingDetails),
+        userId: userId || null,
+        guestName: userName,
+        cleanerId: bookingDetails.cleanerId,
+        date: bookingDetails.date,
+        start: bookingDetails.start,
+        end: bookingDetails.end,
+        duration: bookingDetails.duration,
+        cleaningType: bookingDetails.cleaningType,
       },
     });
 

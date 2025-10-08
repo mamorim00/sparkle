@@ -32,6 +32,11 @@ const ALL_SERVICES: Service[] = [
   { id: "simple-clean", name: "Simple Clean" },
   { id: "deep-clean", name: "Deep Clean" },
   { id: "move-out-clean", name: "Move-Out Clean" },
+  { id: "office-clean", name: "Office Clean" },
+  { id: "post-construction-clean", name: "Post-Construction Clean" },
+  { id: "carpet-cleaning", name: "Carpet Cleaning" },
+  { id: "window-cleaning", name: "Window Cleaning" },
+  { id: "laundry-service", name: "Laundry Service" },
 ];
 
 export default function CleanersClient() {
