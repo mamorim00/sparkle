@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Updated interface with start/end instead of time
 interface StripeSession {
@@ -22,6 +22,8 @@ interface StripeSession {
     duration?: number;
     cleaningType?: string;
     guestName?: string;
+    platformFee?: string;
+    cleanerAmount?: string;
   };
 }
 
@@ -50,12 +52,20 @@ export default function SuccessClient() {
         if (data && data.id && data.metadata?.cleanerId) {
           const bookingRef = doc(db, "bookings", data.id);
 
+          // Fetch cleaner data to get cleaner name and email
+          const cleanerRef = doc(db, "cleaners", data.metadata.cleanerId);
+          const cleanerSnap = await getDoc(cleanerRef);
+          const cleanerData = cleanerSnap.exists() ? cleanerSnap.data() : null;
+
           await setDoc(bookingRef, {
             id: data.id,
             amount: data.amount_total / 100,
+            platformFee: data.metadata.platformFee ? parseFloat(data.metadata.platformFee) : (data.amount_total / 100) * 0.15,
+            cleanerAmount: data.metadata.cleanerAmount ? parseFloat(data.metadata.cleanerAmount) : (data.amount_total / 100) * 0.85,
             currency: data.currency,
             userId: data.metadata.userId || null,
             cleanerId: data.metadata.cleanerId,
+            cleanerName: cleanerData?.name || cleanerData?.username || "Cleaner",
             serviceId: data.metadata.serviceId || null,
             date: data.metadata.date,
             start: data.metadata.start, // ✅ Use start
@@ -63,8 +73,9 @@ export default function SuccessClient() {
             duration: data.metadata.duration,
             cleaningType: data.metadata.cleaningType,
             status: "confirmed",
+            payoutStatus: "pending",
             createdAt: new Date().toISOString(),
-            customerEmail: data.customer_details?.email || null,
+            customerEmail: data.customer_details?.email || (data.metadata.guestName ? `${data.metadata.guestName}@guest.sparkle.com` : "guest@sparkle.com"),
             customerName: data.metadata.guestName || data.customer_details?.name || "Guest",
           });
 

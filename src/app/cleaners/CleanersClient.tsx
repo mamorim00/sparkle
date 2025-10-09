@@ -6,6 +6,7 @@ import { db } from "../../lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import CleanerCard from "../../components/CleanerCard";
 import { useLocation } from "../../context/LocationContext";
+import { SERVICES_BASIC, DEFAULT_CLEANER_IMAGE } from "../../lib/constants";
 
 interface Cleaner {
   id: string;
@@ -20,24 +21,6 @@ interface Cleaner {
   nextAvailable6h: string | null;
 }
 
-interface Service {
-  id: string;
-  name: string;
-}
-
-
-
-const DEFAULT_IMAGE = "/images/default-cleaner.png";
-const ALL_SERVICES: Service[] = [
-  { id: "simple-clean", name: "Simple Clean" },
-  { id: "deep-clean", name: "Deep Clean" },
-  { id: "move-out-clean", name: "Move-Out Clean" },
-  { id: "office-clean", name: "Office Clean" },
-  { id: "post-construction-clean", name: "Post-Construction Clean" },
-  { id: "carpet-cleaning", name: "Carpet Cleaning" },
-  { id: "window-cleaning", name: "Window Cleaning" },
-  { id: "laundry-service", name: "Laundry Service" },
-];
 
 export default function CleanersClient() {
   const router = useRouter();
@@ -74,7 +57,7 @@ export default function CleanersClient() {
           const cleanerData = doc.data() as Omit<Cleaner, "id" | "photoUrl"> & {
             photoUrl?: string;
           };
-          return { id: doc.id, ...cleanerData, photoUrl: cleanerData.photoUrl || DEFAULT_IMAGE };
+          return { id: doc.id, ...cleanerData, photoUrl: cleanerData.photoUrl || DEFAULT_CLEANER_IMAGE };
         });
 
         setCleaners(data);
@@ -109,8 +92,10 @@ export default function CleanersClient() {
             className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           >
             <option value="">All Services</option>
-            {ALL_SERVICES.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+            {SERVICES_BASIC.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
             ))}
           </select>
         </div>
@@ -118,7 +103,7 @@ export default function CleanersClient() {
         {cleaners.length === 0 ? (
           <p className="text-center text-gray-700">
             No cleaners available in {location} for{" "}
-            {serviceId ? ALL_SERVICES.find(s => s.id === serviceId)?.name : "any service"}.
+            {serviceId ? SERVICES_BASIC.find((s) => s.id === serviceId)?.name : "any service"}.
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

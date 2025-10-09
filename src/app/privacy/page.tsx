@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function PrivacyPolicyPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 lg:p-12 space-y-8">
@@ -12,7 +10,7 @@ export default function PrivacyPolicyPage() {
         <p>
           Your privacy is important to us at <strong>Sparkle</strong>. This Privacy Policy explains how
           we collect, use, and protect your personal information when you use our website and services
-          (the "Site" and "Services").
+          (the &quot;Site&quot; and &quot;Services&quot;).
         </p>
 
         <h2>1. Information We Collect</h2>
@@ -72,7 +70,7 @@ export default function PrivacyPolicyPage() {
 
         <h2>9. Changes to This Policy</h2>
         <p>
-          We may update this Privacy Policy periodically. Changes will be posted on this page with a revised "Last updated" date.
+          We may update this Privacy Policy periodically. Changes will be posted on this page with a revised &quot;Last updated&quot; date.
         </p>
 
         <h2>10. Contact Us</h2>

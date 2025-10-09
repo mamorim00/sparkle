@@ -16,10 +16,13 @@ interface ScheduleItem {
 
 interface CleanerProfile {
   username: string;
+  name?: string;
   photoUrl: string;
   pricePerHour: number;
   phone: string;
   schedule: ScheduleItem[];
+  services: string[];
+  stripeConnected?: boolean;
 }
 
 // Extend CleanerProfile with optional verification fields
@@ -60,38 +63,54 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
     if (!user) return;
     setSaving(true);
 
-    let insuranceUrl = "";
-    let otherDocsUrl = "";
+    try {
+      let insuranceUrl = "";
+      let otherDocsUrl = "";
 
-    if (insuranceCertificate) {
-      insuranceUrl = await uploadFile(
-        insuranceCertificate,
-        `cleaners/${user.uid}/insurance_${insuranceCertificate.name}`
-      );
+      if (insuranceCertificate) {
+        insuranceUrl = await uploadFile(
+          insuranceCertificate,
+          `cleaners/${user.uid}/insurance_${insuranceCertificate.name}`
+        );
+      }
+
+      if (otherDocs) {
+        otherDocsUrl = await uploadFile(
+          otherDocs,
+          `cleaners/${user.uid}/docs_${otherDocs.name}`
+        );
+      }
+
+      const updatedData: CleanerVerification = {
+        ...cleanerData,
+        businessId,
+        insuranceCertificateUrl: insuranceUrl,
+        otherDocsUrl,
+        status: "pending",
+      };
+
+      // Save all data including email and name
+      await setDoc(doc(db, "cleaners", user.uid), {
+        ...updatedData,
+        email: user.email,
+        name: cleanerData.name || cleanerData.username,
+        location: "Dublin", // Default location - can be made dynamic later
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      // Clear sessionStorage after successful completion
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("cleanerSetupStep");
+        sessionStorage.removeItem("cleanerSetupData");
+      }
+
+      setSaving(false);
+      router.push("/cleaner/profile");
+    } catch (error) {
+      console.error("Error saving cleaner profile:", error);
+      alert("Failed to save profile. Please try again.");
+      setSaving(false);
     }
-
-    if (otherDocs) {
-      otherDocsUrl = await uploadFile(
-        otherDocs,
-        `cleaners/${user.uid}/docs_${otherDocs.name}`
-      );
-    }
-
-    const updatedData: CleanerVerification = {
-      ...cleanerData,
-      businessId,
-      insuranceCertificateUrl: insuranceUrl,
-      otherDocsUrl,
-      status: "pending",
-    };
-
-    await setDoc(doc(db, "cleaners", user.uid), {
-      ...updatedData,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-
-    setSaving(false);
-    router.push("/cleaner/profile");
   };
 
   if (!user) {

@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { db, auth } from "../../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { SERVICES, PRICE_MULTIPLIERS, MAX_SEARCH_DAYS } from "../../../lib/constants";
 
 import {
   doc,
@@ -36,26 +37,21 @@ interface Cleaner {
   nextAvailable6h?: Timestamp | null;
 }
 
+// Cleaning type with price multiplier
 interface CleaningType {
+  id: string;
   name: string;
   durationHours: number;
   priceMultiplier: number;
 }
 
-const CLEANING_TYPES: CleaningType[] = [
-  { name: "Simple Clean", durationHours: 2, priceMultiplier: 1 },
-  { name: "Deep Clean", durationHours: 6, priceMultiplier: 2 },
-  { name: "Move-Out Clean", durationHours: 2, priceMultiplier: 1 },
-  { name: "Office Clean", durationHours: 6, priceMultiplier: 2 },
-  { name: "Window Cleaning", durationHours: 2, priceMultiplier: 1 },
-  { name: "Carpet Cleaning", durationHours: 6, priceMultiplier: 2 },
-  { name: "Post-Construction", durationHours: 2, priceMultiplier: 1 },
-  { name: "Laundry Service", durationHours: 2, priceMultiplier: 1 },
-];
-
-// --- CONSTANTS ---
-const MAX_SEARCH_LIMIT = 90; // The maximum number of days into the future to search for availability.
-// --------------------------------------------------------
+// Map services to cleaning types with price multipliers
+const CLEANING_TYPES: CleaningType[] = SERVICES.map((service) => ({
+  id: service.id,
+  name: service.name,
+  durationHours: service.durationHours,
+  priceMultiplier: PRICE_MULTIPLIERS[service.id] || 1,
+}));
 
 
 
@@ -144,7 +140,6 @@ export default function BookPage() {
 
   const [cleaner, setCleaner] = useState<Cleaner | null>(null);
   const [selectedCleaning, setSelectedCleaning] = useState<CleaningType>(CLEANING_TYPES[0]);
-  const [guestName, setGuestName] = useState<string>("");
 
   const [days, setDays] = useState<Date[]>([]);
   const [slotsByDay, setSlotsByDay] = useState<Record<string, string[]>>({});
@@ -199,7 +194,7 @@ export default function BookPage() {
     const newSlots: Record<string, string[]> = {};
     const today = new Date();
 
-    for (let i = startDayIndex; daysFound < DAYS_TO_LOAD && i < MAX_SEARCH_LIMIT; i++) {
+    for (let i = startDayIndex; daysFound < DAYS_TO_LOAD && i < MAX_SEARCH_DAYS; i++) {
         const day = new Date(today);
         day.setDate(today.getDate() + i);
         day.setHours(0, 0, 0, 0);
@@ -281,7 +276,7 @@ export default function BookPage() {
   const handleBook = async (dayKey: string, start: string) => {
     if (!cleaner) return;
     const totalPrice = cleaner.pricePerHour * selectedCleaning.durationHours * selectedCleaning.priceMultiplier;
-  
+
     const params: Record<string, string> = {
       cleanerId: cleaner.id,
       cleanerName: cleaner.name,
@@ -291,15 +286,13 @@ export default function BookPage() {
       duration: selectedCleaning.durationHours.toString(),
       totalPrice: totalPrice.toFixed(2),
     };
-  
+
     // Include user info if logged in
     if (user) {
       params.userId = user.uid;
       params.userEmail = user.email ?? "";
-    } else if (guestName) {
-      params.guestName = guestName;
     }
-  
+
     const searchParams = new URLSearchParams(params);
     router.push(`/checkout?${searchParams.toString()}`);
   };
@@ -326,22 +319,11 @@ export default function BookPage() {
              </p>
           ) : (
              <p className="text-sm text-red-500 font-bold mt-1">
-                 No availability found for the next {MAX_SEARCH_LIMIT} days.
+                 No availability found for the next {MAX_SEARCH_DAYS} days.
              </p>
           )}
         </div>
       </div>
-
-      {/* Guest Name */}
-      {!user && (
-        <input
-          type="text"
-          placeholder="Your name (for guest checkout)"
-          value={guestName}
-          onChange={(e) => setGuestName(e.target.value)}
-          className="border p-2 rounded mb-4 w-full"
-        />
-      )}
 
       {/* Cleaning Type */}
       <div className="mb-4">
@@ -381,14 +363,14 @@ export default function BookPage() {
       })}
 
       {/* Message if no slots are found */}
-      {days.length === 0 && searchOffset >= MAX_SEARCH_LIMIT && (
+      {days.length === 0 && searchOffset >= MAX_SEARCH_DAYS && (
           <div className="text-center py-4 text-gray-500">
-              No available slots found within the next {MAX_SEARCH_LIMIT} days.
+              No available slots found within the next {MAX_SEARCH_DAYS} days.
           </div>
       )}
 
       {/* Load more button */}
-      {searchOffset < MAX_SEARCH_LIMIT && (
+      {searchOffset < MAX_SEARCH_DAYS && (
         <button
           onClick={loadMoreDays}
           className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
