@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 // Updated interface with start/end instead of time
 interface StripeSession {
@@ -27,11 +27,24 @@ interface StripeSession {
   };
 }
 
+interface Booking {
+  id: string;
+  amount: number;
+  cleanerName: string;
+  date: string;
+  start: string;
+  end: string;
+  cleaningType: string;
+  status: string;
+}
+
 export default function SuccessClient() {
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [session, setSession] = useState<StripeSession | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     const id = searchParams.get("session_id");
@@ -42,59 +55,126 @@ export default function SuccessClient() {
   useEffect(() => {
     if (!sessionId) return;
 
-    const fetchSessionAndSaveBooking = async () => {
+    let unsubscribe: (() => void) | null = null;
+    let pollTimeout: NodeJS.Timeout | null = null;
+
+    const fetchSessionAndWaitForBooking = async () => {
       try {
+        // Fetch Stripe session details
         const res = await fetch(`/api/get-checkout-session?session_id=${sessionId}`);
         if (!res.ok) throw new Error("Network response not ok");
         const data: StripeSession = await res.json();
         setSession(data);
 
-        if (data && data.id && data.metadata?.cleanerId) {
-          const bookingRef = doc(db, "bookings", data.id);
+        // Listen for booking creation by webhook using real-time listener
+        const bookingRef = doc(db, "bookings", sessionId);
 
-          // Fetch cleaner data to get cleaner name and email
-          const cleanerRef = doc(db, "cleaners", data.metadata.cleanerId);
-          const cleanerSnap = await getDoc(cleanerRef);
-          const cleanerData = cleanerSnap.exists() ? cleanerSnap.data() : null;
+        // Set up real-time listener for booking document
+        unsubscribe = onSnapshot(
+          bookingRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const bookingData = docSnap.data() as Booking;
+              setBooking(bookingData);
+              setLoading(false);
+              console.log("✅ Booking received from webhook:", bookingData);
 
-          await setDoc(bookingRef, {
-            id: data.id,
-            amount: data.amount_total / 100,
-            platformFee: data.metadata.platformFee ? parseFloat(data.metadata.platformFee) : (data.amount_total / 100) * 0.15,
-            cleanerAmount: data.metadata.cleanerAmount ? parseFloat(data.metadata.cleanerAmount) : (data.amount_total / 100) * 0.85,
-            currency: data.currency,
-            userId: data.metadata.userId || null,
-            cleanerId: data.metadata.cleanerId,
-            cleanerName: cleanerData?.name || cleanerData?.username || "Cleaner",
-            serviceId: data.metadata.serviceId || null,
-            date: data.metadata.date,
-            start: data.metadata.start, // ✅ Use start
-            end: data.metadata.end,     // ✅ Use end
-            duration: data.metadata.duration,
-            cleaningType: data.metadata.cleaningType,
-            status: "confirmed",
-            payoutStatus: "pending",
-            createdAt: new Date().toISOString(),
-            customerEmail: data.customer_details?.email || (data.metadata.guestName ? `${data.metadata.guestName}@guest.sparkle.com` : "guest@sparkle.com"),
-            customerName: data.metadata.guestName || data.customer_details?.name || "Guest",
-          });
+              // Clear timeout if booking is found
+              if (pollTimeout) {
+                clearTimeout(pollTimeout);
+                pollTimeout = null;
+              }
+            }
+          },
+          (error) => {
+            console.error("Error listening to booking:", error);
+            setBookingError("Failed to load booking details");
+            setLoading(false);
+          }
+        );
 
-          console.log("✅ Booking saved to Firestore!");
-        } else {
-          console.error("❌ Failed to save booking: Missing cleanerId in metadata.");
+        // Also do an initial check in case the booking was already created
+        const bookingSnap = await getDoc(bookingRef);
+        if (bookingSnap.exists()) {
+          const bookingData = bookingSnap.data() as Booking;
+          setBooking(bookingData);
+          setLoading(false);
+          console.log("✅ Booking already exists:", bookingData);
+          return; // Don't set timeout if already exists
         }
+
+        // Set timeout to stop waiting after 15 seconds
+        pollTimeout = setTimeout(() => {
+          if (!booking) {
+            console.warn("⚠️ Booking not created by webhook within 15 seconds");
+            setBookingError("Booking is being processed. Please check your email for confirmation.");
+            setLoading(false);
+          }
+        }, 15000);
+
       } catch (err) {
-        console.error("Failed to load session or save booking", err);
-      } finally {
+        console.error("Failed to load session or booking", err);
+        setBookingError("Failed to load booking details");
         setLoading(false);
       }
     };
 
-    fetchSessionAndSaveBooking();
-  }, [sessionId]);
+    fetchSessionAndWaitForBooking();
 
-  if (loading) return <p className="text-center">Loading booking details...</p>;
-  if (!session) return <p className="text-center text-red-500">Could not retrieve session details.</p>;
+    // Cleanup function
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (pollTimeout) clearTimeout(pollTimeout);
+    };
+  }, [sessionId, booking]);
+
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-6 text-center">
+        <div className="animate-pulse">
+          <h1 className="text-2xl font-bold text-gray-600 mb-4">Processing your booking...</h1>
+          <p className="mb-2">Please wait while we confirm your booking.</p>
+          <div className="mt-4 flex justify-center">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <p className="text-center text-red-500">Could not retrieve session details.</p>;
+  }
+
+  if (bookingError) {
+    return (
+      <div className="max-w-xl mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-green-600 mb-4">Payment Successful 🎉</h1>
+        <p className="mb-2">
+          Thank you for your payment, <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
+        </p>
+        <p className="mb-4 text-yellow-600">
+          {bookingError}
+        </p>
+        <p className="mb-2">
+          We have received your payment of <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
+        </p>
+        <p className="mb-2">
+          A confirmation email will be sent to <b>{session.customer_details?.email}</b>.
+        </p>
+        {session.receipt_url && (
+          <a
+            href={session.receipt_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            View Receipt
+          </a>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto p-6 text-center">
@@ -105,7 +185,21 @@ export default function SuccessClient() {
       <p className="mb-2">
         We have received your payment of <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
       </p>
-      <p className="mb-2">
+
+      {booking && (
+        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-semibold mb-3">Booking Details</h2>
+          <div className="text-left space-y-2">
+            <p><strong>Cleaner:</strong> {booking.cleanerName}</p>
+            <p><strong>Service:</strong> {booking.cleaningType}</p>
+            <p><strong>Date:</strong> {booking.date}</p>
+            <p><strong>Time:</strong> {booking.start} - {booking.end}</p>
+            <p><strong>Status:</strong> <span className="text-green-600 font-semibold">{booking.status}</span></p>
+          </div>
+        </div>
+      )}
+
+      <p className="mb-2 mt-4">
         A confirmation has been sent to <b>{session.customer_details?.email}</b>.
       </p>
       {session.receipt_url && (

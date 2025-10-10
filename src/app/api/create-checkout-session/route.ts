@@ -35,12 +35,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch cleaner's Stripe Connect account using Admin SDK
+    // Fetch cleaner's Stripe Connect account and name using Admin SDK
     const db = getAdminDb();
     const cleanerDoc = await db.collection("cleaners").doc(bookingDetails.cleanerId).get();
     const cleanerData = cleanerDoc.exists ? cleanerDoc.data() : null;
 
     const cleanerStripeAccountId = cleanerData?.stripeAccountId || null;
+    const cleanerName = cleanerData?.name || cleanerData?.username || bookingDetails.cleanerName || "Cleaner";
 
     const lineItems = [
       {
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
         userId: userId || null,
         guestName: userName,
         cleanerId: bookingDetails.cleanerId,
+        cleanerName: cleanerName,
         date: bookingDetails.date,
         start: bookingDetails.start,
         end: bookingDetails.end,

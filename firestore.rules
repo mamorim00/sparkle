@@ -3,17 +3,184 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Check if user is admin (add your admin UID here)
+    function isAdmin() {
+      return isSignedIn() && request.auth.uid in [
+        // Add your admin UIDs here, e.g.:
+        // 'admin-uid-1',
+        // 'admin-uid-2'
+      ];
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Users can create their own profile
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['email', 'createdAt'])
+        && isValidEmail(request.resource.data.email);
+
+      // Users can update their own profile
+      allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'createdAt']);
+
+      // Users cannot delete their own profile (require admin)
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // CLEANERS COLLECTION
+    // ============================================
+    match /cleaners/{cleanerId} {
+      // Anyone can read cleaner profiles (public listing)
+      allow read: if true;
+
+      // Only authenticated users can create cleaner profiles
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['userId', 'name', 'email', 'createdAt'])
+        && isValidEmail(request.resource.data.email);
+
+      // Cleaners can update their own profile
+      allow update: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'createdAt']);
+
+      // Only admins can delete cleaner profiles
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // BOOKINGS COLLECTION
+    // ============================================
+    match /bookings/{bookingId} {
+      // IMPORTANT: Anyone can read bookings to check availability (needed for booking page)
+      // This allows users to see booked time slots before logging in
+      // Sensitive data (customerName, customerEmail, etc.) should be filtered client-side
+      allow read: if true;
+
+      // Bookings are created by webhook (server-side only)
+      // Client-side creation is not allowed for security
+      allow create: if false;
+
+      // Users can update their own bookings (for cancellation/rescheduling)
+      // Only allow updating specific fields
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'cancelledAt', 'cancelledBy', 'refundAmount',
+                     'refundStatus', 'refundId', 'date', 'start', 'end',
+                     'rescheduledAt', 'originalDate', 'originalStart', 'originalEnd'])
+        ) ||
+        isAdmin()
+      );
+
+      // Users cannot delete bookings
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // REVIEWS COLLECTION
+    // ============================================
+    match /reviews/{reviewId} {
+      // Anyone can read reviews (public)
+      allow read: if true;
+
+      // Authenticated users can create reviews
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.keys().hasAll(['userId', 'cleanerId', 'bookingId', 'rating', 'createdAt']);
+
+      // Users can update their own reviews within 24 hours
+      allow update: if isOwner(resource.data.userId)
+        && request.time < resource.data.createdAt + duration.value(24, 'h')
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'cleanerId', 'bookingId', 'createdAt']);
+
+      // Users can delete their own reviews, or admins can delete any
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // ============================================
+    // REVIEW REQUESTS COLLECTION
+    // ============================================
+    match /reviewRequests/{requestId} {
+      // Users can read review requests by token (no auth required for email links)
+      allow read: if true;
+
+      // Only server-side (Firebase Functions) can create review requests
+      allow create: if false;
+
+      // Users can update review requests to mark as submitted
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['reviewSubmitted', 'submittedAt']);
+
+      // Only admins can delete review requests
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // SERVICES COLLECTION (if you add custom services)
+    // ============================================
+    match /services/{serviceId} {
+      // Anyone can read services
+      allow read: if true;
+
+      // Only cleaners can create services for themselves
+      allow create: if isSignedIn()
+        && request.resource.data.cleanerId == request.auth.uid;
+
+      // Cleaners can update their own services
+      allow update: if isSignedIn()
+        && resource.data.cleanerId == request.auth.uid;
+
+      // Cleaners can delete their own services
+      allow delete: if isSignedIn()
+        && resource.data.cleanerId == request.auth.uid;
+    }
+
+    // ============================================
+    // ADMIN COLLECTIONS
+    // ============================================
+    match /analytics/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /reports/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ============================================
+    // DENY ALL OTHER COLLECTIONS
+    // ============================================
+    // Explicitly deny access to any other collections
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2025, 10, 19);
+      allow read, write: if false;
     }
   }
 }

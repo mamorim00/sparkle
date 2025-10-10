@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth, db } from "../../../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, AlertCircle, CheckCircle } from "lucide-react";
 
@@ -124,24 +124,27 @@ export default function RescheduleBookingPage() {
     try {
       const newEnd = calculateEndTime(newStart, booking.duration);
 
-      // Update booking
-      await updateDoc(doc(db, "bookings", booking.id), {
-        date: newDate,
-        start: newStart,
-        end: newEnd,
-        rescheduledAt: new Date().toISOString(),
-        rescheduledFrom: {
-          date: booking.date,
-          start: booking.start,
-          end: booking.end,
-        },
+      // Call reschedule API
+      const response = await fetch("/api/bookings/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          newDate,
+          newStart,
+          newEnd,
+        }),
       });
 
-      // TODO: Send rescheduling notification emails
-      // TODO: Trigger availability recalculation
+      const data = await response.json();
 
-      alert("Booking rescheduled successfully!");
-      router.push(`/booking/${bookingId}`);
+      if (response.ok) {
+        alert("Booking rescheduled successfully!");
+        router.push(`/booking/${bookingId}`);
+      } else {
+        alert(`Failed to reschedule booking: ${data.message || "Unknown error"}`);
+        setSaving(false);
+      }
     } catch (error) {
       console.error("Error rescheduling booking:", error);
       alert("Failed to reschedule booking. Please try again.");

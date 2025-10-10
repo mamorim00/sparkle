@@ -276,10 +276,10 @@ export default function CheckoutClient() {
                   setAuthMode("guest");
                   setError("");
                 }}
-                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                className={`flex-1 py-2.5 px-4 rounded-md font-semibold transition-all ${
                   authMode === "guest"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-gray-900 shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Continue as Guest
@@ -289,10 +289,10 @@ export default function CheckoutClient() {
                   setAuthMode("login");
                   setError("");
                 }}
-                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                className={`flex-1 py-2.5 px-4 rounded-md font-semibold transition-all ${
                   authMode === "login"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-gray-900 shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Login
@@ -302,10 +302,10 @@ export default function CheckoutClient() {
                   setAuthMode("register");
                   setError("");
                 }}
-                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition ${
+                className={`flex-1 py-2.5 px-4 rounded-md font-semibold transition-all ${
                   authMode === "register"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-gray-900 shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Register
