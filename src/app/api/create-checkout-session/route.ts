@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getAdminDb } from "../../../lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
+
+const PLATFORM_FEE_PERCENTAGE = 0.15; // 15% commission
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +19,6 @@ export async function POST(req: NextRequest) {
       userId,
       userName,
       userEmail,
-      userPhone,
     } = body;
 
     if (
@@ -33,6 +35,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch cleaner's Stripe Connect account and name using Admin SDK
+    const db = getAdminDb();
+    const cleanerDoc = await db.collection("cleaners").doc(bookingDetails.cleanerId).get();
+    const cleanerData = cleanerDoc.exists ? cleanerDoc.data() : null;
+
+    const cleanerStripeAccountId = cleanerData?.stripeAccountId || null;
+    const cleanerName = cleanerData?.name || cleanerData?.username || bookingDetails.cleanerName || "Cleaner";
+
     const lineItems = [
       {
         price_data: {
@@ -47,7 +57,12 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    const session = await stripe.checkout.sessions.create({
+    // Calculate platform fee (15%)
+    const platformFeeAmount = Math.round(totalAmount * 100 * PLATFORM_FEE_PERCENTAGE);
+    const cleanerAmount = Math.round(totalAmount * 100 * (1 - PLATFORM_FEE_PERCENTAGE));
+
+    // Build session config
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -58,13 +73,28 @@ export async function POST(req: NextRequest) {
         userId: userId || null,
         guestName: userName,
         cleanerId: bookingDetails.cleanerId,
+        cleanerName: cleanerName,
         date: bookingDetails.date,
         start: bookingDetails.start,
         end: bookingDetails.end,
         duration: bookingDetails.duration,
         cleaningType: bookingDetails.cleaningType,
+        platformFee: (platformFeeAmount / 100).toString(),
+        cleanerAmount: (cleanerAmount / 100).toString(),
       },
-    });
+    };
+
+    // If cleaner has Stripe Connect, use destination charges
+    if (cleanerStripeAccountId) {
+      sessionConfig.payment_intent_data = {
+        application_fee_amount: platformFeeAmount,
+        transfer_data: {
+          destination: cleanerStripeAccountId,
+        },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (error) {

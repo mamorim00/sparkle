@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  @apply h-full;
+}
+
 body {
-  @apply bg-primary text-neutral antialiased;
+  @apply bg-primary text-neutral antialiased flex flex-col;
 }
 
 section {

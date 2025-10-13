@@ -148,27 +148,27 @@ export default function AuthPage() {
   const alternateRole = role === "cleaner" ? "customer" : "cleaner";
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="bg-white p-6 rounded shadow w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-2 text-center">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
+        <h2 className="text-3xl font-bold mb-2 text-center text-primary-dark">
           {isRegister ? "Register" : "Login"}
         </h2>
 
         {isRegister && !isAdminMode && (
-          <p className="text-center text-sm mb-4 text-gray-600">
-            Registering as {role.charAt(0).toUpperCase() + role.slice(1)}
+          <p className="text-center text-sm mb-4 text-neutral">
+            Registering as <span className="font-semibold text-accent">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
           </p>
         )}
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {message && <p className="text-green-500 text-sm">{message}</p>}
+        {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">{error}</p>}
+        {message && <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg mb-4">{message}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <input
               type="text"
               placeholder="Username"
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -178,7 +178,7 @@ export default function AuthPage() {
           <input
             type="email"
             placeholder="Email"
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -186,7 +186,7 @@ export default function AuthPage() {
           <input
             type="password"
             placeholder="Password"
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -194,7 +194,7 @@ export default function AuthPage() {
 
           <button
             type="submit"
-            className="w-full bg-primary text-white py-2 rounded hover:bg-green-600"
+            className="w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors shadow-md hover:shadow-lg"
           >
             {isRegister ? "Register" : "Login"}
           </button>
@@ -202,7 +202,7 @@ export default function AuthPage() {
 
         {!isRegister && (
           <p
-            className="text-right mt-2 text-sm text-primary underline cursor-pointer"
+            className="text-right mt-3 text-sm text-accent hover:text-accent-dark underline cursor-pointer font-medium"
             onClick={handleForgotPassword}
           >
             Forgot your password?
@@ -210,10 +210,10 @@ export default function AuthPage() {
         )}
 
         {isRegister && !isAdminMode && (
-          <p className="text-center mt-2 text-sm text-gray-700">
+          <p className="text-center mt-4 text-sm text-primary-dark">
             Register as{" "}
             <span
-              className="cursor-pointer underline text-primary"
+              className="cursor-pointer underline text-accent hover:text-accent-dark font-semibold"
               onClick={() => setRole(alternateRole)}
             >
               {alternateRole.charAt(0).toUpperCase() + alternateRole.slice(1)}
@@ -221,10 +221,10 @@ export default function AuthPage() {
           </p>
         )}
 
-        <p className="text-center mt-4">
-          {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+        <p className="text-center mt-4 text-primary-dark">
+          {isRegister ? "Already have an account?" : "Do not have an account?"}{" "}
           <span
-            className="text-primary underline cursor-pointer"
+            className="text-accent hover:text-accent-dark underline cursor-pointer font-semibold"
             onClick={() => setIsRegister(!isRegister)}
           >
             {isRegister ? "Login" : "Register"}

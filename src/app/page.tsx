@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import CleanerCard from "../components/CleanerCard";
+import ServiceBookingModal from "../components/ServiceBookingModal";
 import Link from "next/link";
 import { useLocation } from "../context/LocationContext";
-import { useRouter } from "next/navigation";
+import { SERVICES, type Service } from "../lib/constants";
 
 interface Cleaner {
   id: string;
@@ -19,95 +20,60 @@ interface Cleaner {
   nextAvailable6h: string | null;
 }
 
-interface Service {
-  id: string;
-  name: string;
+// Service icons mapped by service ID
+const SERVICE_ICONS: Record<string, React.ReactNode> = {
+  "simple-clean": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  "deep-clean": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  ),
+  "move-out-clean": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  ),
+  "office-clean": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
+  "window-cleaning": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+    </svg>
+  ),
+  "carpet-cleaning": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  ),
+  "post-construction": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+    </svg>
+  ),
+  "laundry-service": (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+};
+
+// Extend Service type to include icon
+interface ServiceWithIcon extends Service {
   icon: React.ReactNode;
-  description: string;
 }
 
-const ALL_SERVICES: Service[] = [
-  {
-    id: "simple-clean",
-    name: "Simple Clean",
-    description: "Quick, efficient cleaning for your everyday needs",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    id: "deep-clean",
-    name: "Deep Clean",
-    description: "Thorough cleaning for every corner of your space",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-  },
-  {
-    id: "move-out-clean",
-    name: "Move-Out Clean",
-    description: "Complete cleaning for moving transitions",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-  },
-  {
-    id: "office-clean",
-    name: "Office Clean",
-    description: "Professional cleaning for workspaces",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "window-clean",
-    name: "Window Cleaning",
-    description: "Crystal clear windows inside and out",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
-      </svg>
-    ),
-  },
-  {
-    id: "carpet-clean",
-    name: "Carpet Cleaning",
-    description: "Deep carpet and upholstery cleaning",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "post-construction",
-    name: "Post-Construction",
-    description: "Cleanup after renovations and construction",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-      </svg>
-    ),
-  },
-  {
-    id: "laundry-service",
-    name: "Laundry Service",
-    description: "Wash, fold, and organize your laundry",
-    icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-    ),
-  },
-];
+// Services with icons for the homepage
+const ALL_SERVICES: ServiceWithIcon[] = SERVICES.map(service => ({
+  ...service,
+  icon: SERVICE_ICONS[service.id] || null,
+}));
 
 export default function HomePage() {
   const { location } = useLocation();
@@ -118,12 +84,24 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredServices, setFilteredServices] = useState<Service[]>(ALL_SERVICES.slice(0, 5));
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const router = useRouter();
+
+  // modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const handleSelectService = (serviceId: string) => {
-    router.push(`/cleaners?service=${encodeURIComponent(serviceId)}`);
+    const service = ALL_SERVICES.find((s) => s.id === serviceId);
+    if (service) {
+      setSelectedService(service);
+      setModalOpen(true);
+    }
     setSearchTerm("");
     setDropdownOpen(false);
+  };
+
+  const handleServiceCardClick = (service: Service) => {
+    setSelectedService(service);
+    setModalOpen(true);
   };
 
   // fetch featured cleaners
@@ -189,7 +167,7 @@ export default function HomePage() {
                   setDropdownOpen(true);
                 }}
                 onFocus={() => setDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 100)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
                 placeholder="What service do you need?"
                 className="w-full px-6 py-4 pr-12 rounded-2xl border-2 border-neutral-light/20 bg-white shadow-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-neutral text-lg transition-all"
               />
@@ -237,7 +215,7 @@ export default function HomePage() {
           {ALL_SERVICES.map((service) => (
             <div
               key={service.id}
-              onClick={() => router.push(`/cleaners?service=${encodeURIComponent(service.id)}`)}
+              onClick={() => handleServiceCardClick(service)}
               className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1"
             >
               <div className="flex flex-col items-center text-center space-y-4">
@@ -250,6 +228,9 @@ export default function HomePage() {
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {service.description}
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium mt-2">
+                    {service.durationHours} hour service
                   </p>
                 </div>
               </div>
@@ -293,14 +274,14 @@ export default function HomePage() {
             <div className="mt-16 text-center">
               <Link
                 href="/cleaners"
-                className="inline-block 
-                          bg-blue-600 text-white 
-                          px-10 py-4 rounded-xl 
-                          text-lg font-semibold 
-                          hover:bg-blue-700 
-                          active:bg-blue-800 
+                className="inline-block
+                          bg-blue-600 text-white
+                          px-10 py-4 rounded-xl
+                          text-lg font-semibold
+                          hover:bg-blue-700
+                          active:bg-blue-800
                           transition-all duration-200
-                          shadow-md hover:shadow-lg 
+                          shadow-md hover:shadow-lg
                           transform hover:-translate-y-0.5"
               >
                 View All Cleaners
@@ -309,6 +290,18 @@ export default function HomePage() {
           </>
         )}
       </section>
+
+      {/* Service Booking Modal */}
+      {selectedService && (
+        <ServiceBookingModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          serviceId={selectedService.id}
+          serviceName={selectedService.name}
+          serviceDuration={selectedService.durationHours}
+          location={location}
+        />
+      )}
     </div>
   );
 }
