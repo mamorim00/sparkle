@@ -167,7 +167,7 @@ export default function HomePage() {
                   setDropdownOpen(true);
                 }}
                 onFocus={() => setDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 100)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
                 placeholder="What service do you need?"
                 className="w-full px-6 py-4 pr-12 rounded-2xl border-2 border-neutral-light/20 bg-white shadow-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-neutral text-lg transition-all"
               />

@@ -172,10 +172,9 @@ export default function ServiceBookingModal({
                 return (
                   <div
                     key={cleaner.id}
-                    className={`relative border rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer ${
+                    className={`relative border rounded-xl p-5 hover:shadow-lg transition-all ${
                       isTopChoice ? "border-green-500 bg-green-50" : "border-gray-200 hover:border-blue-300"
                     }`}
-                    onClick={() => handleBookCleaner(cleaner.id)}
                   >
                     {isTopChoice && (
                       <div className="absolute -top-3 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
@@ -222,6 +221,7 @@ export default function ServiceBookingModal({
                       {/* Book Button */}
                       <div className="flex-shrink-0">
                         <button
+                          onClick={() => handleBookCleaner(cleaner.id)}
                           className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
                             isTopChoice
                               ? "bg-green-600 text-white hover:bg-green-700"
