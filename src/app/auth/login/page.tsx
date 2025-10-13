@@ -222,7 +222,7 @@ export default function AuthPage() {
         )}
 
         <p className="text-center mt-4 text-primary-dark">
-          {isRegister ? "Already have an account?" : "Don&apos;t have an account?"}{" "}
+          {isRegister ? "Already have an account?" : "Do not have an account?"}{" "}
           <span
             className="text-accent hover:text-accent-dark underline cursor-pointer font-semibold"
             onClick={() => setIsRegister(!isRegister)}
