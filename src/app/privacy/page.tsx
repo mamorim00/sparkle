@@ -121,7 +121,7 @@ export default function PrivacyPolicyPage() {
 
         <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-2">
           <span className="w-2 h-8 bg-green-600 rounded"></span>
-          8. Children's Privacy
+          8. Children&apos;s Privacy
         </h2>
         <p className="text-gray-700">
           Sparkle does not knowingly collect personal information from children under 18. If we learn we have inadvertently collected such data, we will take steps to delete it.

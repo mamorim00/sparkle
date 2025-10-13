@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Shield, AlertCircle } from "lucide-react";
+import { FileText, AlertCircle } from "lucide-react";
 
 export default function TermsOfServicePage() {
   return (
@@ -27,9 +27,9 @@ export default function TermsOfServicePage() {
 
       <section className="prose prose-lg max-w-none">
         <p className="text-gray-700 leading-relaxed">
-          Welcome to <strong>Sparkle</strong> ("we", "us", or "our"). These Terms of Service ("Terms")
-          govern your access to and use of our website and booking platform (the "Site") and the
-          cleaning services (the "Services") offered through the Site. By accessing or using the
+          Welcome to <strong>Sparkle</strong> (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). These Terms of Service (&quot;Terms&quot;)
+          govern your access to and use of our website and booking platform (the &quot;Site&quot;) and the
+          cleaning services (the &quot;Services&quot;) offered through the Site. By accessing or using the
           Site or booking Services you agree to these Terms. If you do not agree, do not use the Site
           or Services.
         </p>

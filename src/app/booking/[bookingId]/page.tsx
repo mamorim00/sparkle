@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { auth, db } from "../../../lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import {
@@ -11,7 +11,6 @@ import {
   Clock,
   User as UserIcon,
   Mail,
-  DollarSign,
   AlertCircle,
   CheckCircle,
   XCircle,
@@ -23,24 +22,17 @@ import { Booking } from "../../../types/booking";
 
 export default function BookingDetailsPage() {
   const params = useParams();
-  const router = useRouter();
   const bookingId = params.bookingId as string;
 
-  const [user, setUser] = useState<User | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        await fetchBooking();
-      } else {
-        // Allow viewing booking details without auth for guest bookings
-        await fetchBooking();
-      }
+    const unsubscribe = onAuthStateChanged(auth, async () => {
+      // Allow viewing booking details with or without auth
+      await fetchBooking();
     });
     return () => unsubscribe();
   }, [bookingId]);

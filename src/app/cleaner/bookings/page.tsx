@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, DollarSign, User as UserIcon, CheckCircle } from "lucide-react";
 
@@ -294,7 +294,7 @@ export default function CleanerBookingsPage() {
                     </span>
                     {todayBooking && (
                       <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold border border-yellow-300">
-                        📅 Today's Job
+                        📅 Today&apos;s Job
                       </span>
                     )}
                     {timeUntil && activeTab === "upcoming" && (
@@ -386,8 +386,8 @@ export default function CleanerBookingsPage() {
                     <span>Booked on {new Date(booking.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         ) : (
           /* Empty State for Active Tab */

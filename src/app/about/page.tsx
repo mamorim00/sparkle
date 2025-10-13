@@ -27,7 +27,7 @@ export default function AboutPage() {
             who care about quality and detail.
           </p>
           <p className="text-gray-700 leading-relaxed">
-            Whether it's a one-time deep clean or ongoing help, Sparkle makes sure the process
+            Whether it&apos;s a one-time deep clean or ongoing help, Sparkle makes sure the process
             is quick, transparent, and worry-free.
           </p>
         </div>

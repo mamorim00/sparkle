@@ -84,7 +84,7 @@ export default function ServicesPage() {
             What We Offer
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            From routine maintenance to deep cleans, we've got you covered
+            From routine maintenance to deep cleans, we&apos;ve got you covered
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function ServicesPage() {
 
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-3">
-                  What's Included:
+                  What&apos;s Included:
                 </h4>
                 <ul className="space-y-2">
                   {service.features.map((feature, idx) => (

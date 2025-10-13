@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getAdminDb } from "../../../../lib/firebaseAdmin";
-import { Booking, CancelBookingResponse } from "../../../../types/booking";
+import { Booking, CancelBookingResponse, RefundStatus } from "../../../../types/booking";
 
 export const dynamic = "force-dynamic";
 
@@ -121,14 +121,9 @@ export async function POST(req: NextRequest) {
       cancelledAt: new Date().toISOString(),
       cancelledBy: booking.userId || "guest",
       refundAmount: refundAmount,
-      refundStatus: "full" as const,
+      refundStatus: (refundPercentage < 100 ? "partial" : "full") as RefundStatus,
       refundId: refund?.id || null,
     };
-
-    // If partial refund, update refund status
-    if (refundPercentage < 100) {
-      updateData.refundStatus = "partial" as const;
-    }
 
     await bookingRef.update(updateData);
 

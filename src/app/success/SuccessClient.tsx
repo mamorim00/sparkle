@@ -56,7 +56,7 @@ export default function SuccessClient() {
     if (!sessionId) return;
 
     let unsubscribe: (() => void) | null = null;
-    let pollTimeout: NodeJS.Timeout | null = null;
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const fetchSessionAndWaitForBooking = async () => {
       try {

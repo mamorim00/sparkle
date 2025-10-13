@@ -155,7 +155,7 @@ export default function HelpCenterPage() {
         {filteredFaqs.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 text-lg">
-              No results found for "{searchQuery}". Try different keywords or{" "}
+              No results found for &quot;{searchQuery}&quot;. Try different keywords or{" "}
               <Link href="/contact" className="text-blue-600 hover:underline">
                 contact us
               </Link>

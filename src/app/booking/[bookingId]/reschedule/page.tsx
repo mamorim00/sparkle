@@ -34,7 +34,6 @@ export default function RescheduleBookingPage() {
 
   const [newDate, setNewDate] = useState("");
   const [newStart, setNewStart] = useState("");
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
