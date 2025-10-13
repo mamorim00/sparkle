@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         userId: userId || null,
         guestName: userName,
+        guestEmail: userEmail || "", // Store email in metadata for webhook reliability
         cleanerId: bookingDetails.cleanerId,
         cleanerName: cleanerName,
         date: bookingDetails.date,

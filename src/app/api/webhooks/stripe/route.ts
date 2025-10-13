@@ -97,8 +97,10 @@ async function createBookingFromSession(session: Stripe.Checkout.Session) {
     }
 
     // Get customer details
+    // Priority: 1) Stripe session email, 2) Metadata email (from checkout form), 3) Generate from name
     const customerEmail = session.customer_details?.email ||
-      (metadata.guestName ? `${metadata.guestName}@guest.sparkle.com` : "guest@sparkle.com");
+      metadata.guestEmail ||
+      (metadata.guestName ? `${metadata.guestName.replace(/\s+/g, '')}@guest.sparkle.com` : "guest@sparkle.com");
     const customerName = metadata.guestName || session.customer_details?.name || "Guest";
 
     // Get cleaner name from metadata (preferred) or fetch from Firestore as fallback
