@@ -22,6 +22,7 @@ interface StripeSession {
     duration?: number;
     cleaningType?: string;
     guestName?: string;
+    guestEmail?: string;
     platformFee?: string;
     cleanerAmount?: string;
   };
