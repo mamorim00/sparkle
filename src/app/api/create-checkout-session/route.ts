@@ -21,6 +21,12 @@ export async function POST(req: NextRequest) {
       userEmail,
     } = body;
 
+    console.log("📝 Checkout session data received:", {
+      userId,
+      userName,
+      userEmail,
+    });
+
     if (
       !totalAmount ||
       !bookingDetails ||
@@ -84,6 +90,12 @@ export async function POST(req: NextRequest) {
         cleanerAmount: (cleanerAmount / 100).toString(),
       },
     };
+
+    console.log("🎫 Creating Stripe session with metadata:", {
+      customer_email: sessionConfig.customer_email,
+      metadata_guestEmail: sessionConfig.metadata?.guestEmail,
+      metadata_guestName: sessionConfig.metadata?.guestName,
+    });
 
     // If cleaner has Stripe Connect, use destination charges
     if (cleanerStripeAccountId) {
