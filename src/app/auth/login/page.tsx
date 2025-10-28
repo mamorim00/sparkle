@@ -106,7 +106,7 @@ export default function AuthPage() {
             alert("Your account is pending approval.");
             return;
           }
-          router.push("/cleaner/dashboard");
+          router.push("/cleaner-dashboard");
           return;
         }
 
@@ -117,7 +117,7 @@ export default function AuthPage() {
           if (userData?.role === "admin") {
             router.push("/admin/dashboard");
           } else if (userData?.role === "cleaner") {
-            router.push("/cleaner/dashboard");
+            router.push("/cleaner-dashboard");
           } else if (userData?.role === "customer") {
             router.push("/user/bookings");
           } else {

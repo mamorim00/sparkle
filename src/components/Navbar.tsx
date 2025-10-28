@@ -31,8 +31,22 @@ export default function Navbar() {
             const role = userDoc.data().role || "customer";
             setUserRole(role);
 
-            // If cleaner, fetch pending requests count
+            // If cleaner, fetch cleaner profile and pending requests count
             if (role === "cleaner") {
+              const cleanerDocRef = doc(db, "cleaners", currentUser.uid);
+              const cleanerDoc = await getDoc(cleanerDocRef);
+
+              if (cleanerDoc.exists()) {
+                // Update user object with cleaner info
+                const cleanerData = cleanerDoc.data();
+                const updatedUser = {
+                  ...currentUser,
+                  displayName: cleanerData.username || currentUser.displayName,
+                  email: cleanerData.email || currentUser.email,
+                } as User;
+                setUser(updatedUser);
+              }
+
               fetchPendingRequestsCount(currentUser.uid);
             }
           } else {
@@ -228,14 +242,6 @@ export default function Navbar() {
                         >
                           <Briefcase className="w-4 h-4 text-gray-600" />
                           Admin Dashboard
-                        </Link>
-                        <Link
-                          href="/user/bookings"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={closeUserMenu}
-                        >
-                          <Calendar className="w-4 h-4 text-gray-600" />
-                          My Bookings
                         </Link>
                         <Link
                           href="/support"
