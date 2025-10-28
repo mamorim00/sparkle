@@ -29,7 +29,7 @@ export default function Footer() {
             <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
             <li><Link href="/services" className="hover:text-primary">Services</Link></li>
             <li><Link href="/contact" className="hover:text-primary">Contact</Link></li>
-            <li><Link href="/auth/login" className="hover:text-primary">Login</Link></li>
+            <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
           </ul>
         </div>
 
@@ -39,7 +39,6 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             <li><Link href="/auth/login?mode=register&role=cleaner" className="hover:text-primary">Join as a Cleaner</Link></li>
             <li><Link href="/cleaner-dashboard" className="hover:text-primary">Dashboard</Link></li>
-            <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
           </ul>
         </div>
         
