@@ -47,6 +47,18 @@ export default function AuthPage() {
   }, []);
 
   const createUserDoc = async (uid: string) => {
+    // Always create user document for role tracking
+    const userRef = doc(db, "users", uid);
+    await setDoc(userRef, {
+      username,
+      email,
+      role,
+      reservations: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // If cleaner, also create cleaner profile
     if (role === "cleaner") {
       const cleanerRef = doc(db, "cleaners", uid);
       await setDoc(cleanerRef, {
@@ -58,16 +70,6 @@ export default function AuthPage() {
         services: [],
         schedule: [],
         phone: "",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      const userRef = doc(db, "users", uid);
-      await setDoc(userRef, {
-        username,
-        email,
-        role,
-        reservations: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
-import CleanerDashboard from "@/app/cleaner-dashboard/page";
+import CleanerAvailability from "@/components/CleanerAvailability";
 
 // Your types
 interface ScheduleItem {
@@ -52,28 +52,30 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Step 3: Your Cleaner Dashboard</h2>
-      <p className="text-sm mb-4">
-        You can now see your dashboard and edit your profile or schedule.
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold mb-2">Step 3: Manage Your Availability</h2>
+      <p className="text-gray-600 mb-6">
+        Set your weekly schedule and add any blocked dates. You can always update this later from your dashboard.
       </p>
 
-      {/* Replace with your real dashboard/schedule form */}
-      <CleanerDashboard />
+      {/* Schedule Management Component */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+        <CleanerAvailability cleanerId={user.uid} />
+      </div>
 
-      <div className="flex justify-between mt-4">
+      <div className="flex justify-between mt-6">
         <button
           onClick={onBack}
-          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          className="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors font-medium"
         >
-          Back
+          ← Back
         </button>
 
         <button
           onClick={handleNext}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
-          Continue to Verification
+          Continue to Verification →
         </button>
       </div>
     </div>
