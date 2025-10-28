@@ -58,13 +58,13 @@ export default function Footer() {
 
           {/* Language Switcher */}
           <div className="mt-4">
-            <h4 className="font-bold text-white mb-2 text-sm">{t("footer.language")}</h4>
+            <h4 className="font-bold text-primary-dark mb-2 text-sm">{t("footer.language")}</h4>
             <div className="flex gap-2">
               <button
                 onClick={() => setLanguage("en")}
                 className={`px-3 py-1 text-sm rounded transition-colors ${
                   language === "en"
-                    ? "bg-primary text-white font-semibold"
+                    ? "bg-primary text-primary-dark font-semibold"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
@@ -74,7 +74,7 @@ export default function Footer() {
                 onClick={() => setLanguage("fi")}
                 className={`px-3 py-1 text-sm rounded transition-colors ${
                   language === "fi"
-                    ? "bg-primary text-white font-semibold"
+                    ? "bg-primary text-primary-dark font-semibold"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >

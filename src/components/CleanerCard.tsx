@@ -79,7 +79,12 @@ export default function CleanerCard({
     selectedDuration === 6 ? parseDate(nextAvailable6h) :
     null;
 
-  const formattedTime = nextAvailableDate ? formatAvailability(nextAvailableDate) : "Not available soon";
+  // Check if the next available time is in the past
+  const now = new Date();
+  const isInPast = nextAvailableDate && nextAvailableDate.getTime() <= now.getTime();
+
+  // If time is in the past, treat as not available
+  const formattedTime = (nextAvailableDate && !isInPast) ? formatAvailability(nextAvailableDate) : "Not available soon";
 
   const renderStars = (rating: number, reviewCount: number) => {
     const fullStars = Math.floor(rating);
@@ -153,7 +158,7 @@ export default function CleanerCard({
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Next Available
             </p>
-            <p className={`text-sm font-semibold ${nextAvailableDate ? 'text-green-600' : 'text-gray-400'}`}>
+            <p className={`text-sm font-semibold ${(nextAvailableDate && !isInPast) ? 'text-green-600' : 'text-gray-400'}`}>
               {formattedTime}
             </p>
           </div>
