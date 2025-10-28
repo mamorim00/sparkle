@@ -206,22 +206,6 @@ export default function Navbar() {
                           )}
                         </Link>
                         <Link
-                          href="/cleaner/bookings"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={closeUserMenu}
-                        >
-                          <Calendar className="w-4 h-4 text-gray-600" />
-                          My Bookings
-                        </Link>
-                        <Link
-                          href="/cleaner/profile"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={closeUserMenu}
-                        >
-                          <UserIcon className="w-4 h-4 text-gray-600" />
-                          My Profile
-                        </Link>
-                        <Link
                           href="/support"
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={closeUserMenu}
