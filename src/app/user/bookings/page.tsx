@@ -5,7 +5,8 @@ import { auth, db } from "../../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import Link from "next/link";
-import { Calendar, Clock, DollarSign, User as UserIcon } from "lucide-react";
+import { Calendar, Clock, DollarSign, User as UserIcon, AlertCircle, Loader } from "lucide-react";
+import ProtectedRoute from "../../../components/ProtectedRoute";
 
 interface Booking {
   id: string;
@@ -16,9 +17,10 @@ interface Booking {
   end: string;
   cleaningType: string;
   amount: number;
-  status: "confirmed" | "cancelled" | "completed";
+  status: "pending_acceptance" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
   createdAt: string;
   duration: number;
+  requestExpiresAt?: string;
 }
 
 export default function UserBookingsPage() {
@@ -74,12 +76,18 @@ export default function UserBookingsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "pending_acceptance":
+        return "bg-orange-100 text-orange-800";
       case "confirmed":
         return "bg-blue-100 text-blue-800";
       case "completed":
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "expired":
+        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -87,52 +95,94 @@ export default function UserBookingsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case "pending_acceptance":
+        return "⏳";
       case "confirmed":
         return "✓";
       case "completed":
         return "✔";
       case "cancelled":
         return "✕";
+      case "rejected":
+        return "✕";
+      case "expired":
+        return "⏰";
       default:
         return "○";
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending_acceptance":
+        return "Awaiting Confirmation";
+      case "confirmed":
+        return "Confirmed";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      case "rejected":
+        return "Rejected";
+      case "expired":
+        return "Expired";
+      default:
+        return status;
+    }
+  };
+
+  const getTimeUntilExpiry = (expiresAt: string) => {
+    const now = Date.now();
+    const expiryTime = new Date(expiresAt).getTime();
+    const diff = expiryTime - now;
+
+    if (diff <= 0) return "Expired";
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`;
+    }
+    return `${minutes}m remaining`;
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Loading your bookings...</p>
+      <ProtectedRoute>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
+            <p className="text-lg mt-4 text-gray-600">Loading your bookings...</p>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
   if (!user) {
-    return (
-      <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-        <p className="text-gray-600 mb-6">You need to be logged in to view your bookings.</p>
-        <Link
-          href="/auth/login"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-        >
-          Go to Login
-        </Link>
-      </div>
-    );
+    // This shouldn't happen because ProtectedRoute will redirect, but keep as fallback
+    return null;
   }
 
-  // Separate upcoming and past bookings
+  // Separate bookings by status
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const pendingBookings = bookings.filter((b) => b.status === "pending_acceptance");
   const upcomingBookings = bookings.filter((b) => new Date(b.date) >= today && b.status === "confirmed");
-  const pastBookings = bookings.filter((b) => new Date(b.date) < today || b.status !== "confirmed");
+  const pastBookings = bookings.filter(
+    (b) =>
+      (new Date(b.date) < today && (b.status === "confirmed" || b.status === "completed")) ||
+      b.status === "cancelled" ||
+      b.status === "rejected" ||
+      b.status === "expired"
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50 py-10 px-4">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">My Bookings</h1>
@@ -140,14 +190,14 @@ export default function UserBookingsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Bookings</p>
-                <p className="text-3xl font-bold text-gray-900">{bookings.length}</p>
+                <p className="text-sm text-gray-600">Awaiting</p>
+                <p className="text-3xl font-bold text-orange-600">{pendingBookings.length}</p>
               </div>
-              <Calendar className="w-10 h-10 text-blue-600" />
+              <Loader className="w-10 h-10 text-orange-600" />
             </div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -162,15 +212,97 @@ export default function UserBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-600">Total</p>
+                <p className="text-3xl font-bold text-gray-900">{bookings.length}</p>
+              </div>
+              <Calendar className="w-10 h-10 text-gray-600" />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-gray-600">Total Spent</p>
                 <p className="text-3xl font-bold text-green-600">
-                  €{bookings.reduce((sum, b) => sum + (b.amount || 0), 0).toFixed(2)}
+                  €
+                  {bookings
+                    .filter((b) => b.status === "confirmed" || b.status === "completed")
+                    .reduce((sum, b) => sum + (b.amount || 0), 0)
+                    .toFixed(2)}
                 </p>
               </div>
               <DollarSign className="w-10 h-10 text-green-600" />
             </div>
           </div>
         </div>
+
+        {/* Awaiting Confirmation Section */}
+        {pendingBookings.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-orange-600" />
+              Awaiting Confirmation
+            </h2>
+            <div className="space-y-4">
+              {pendingBookings.map((booking) => (
+                <Link
+                  key={booking.id}
+                  href={`/booking/${booking.id}`}
+                  className="block bg-gradient-to-r from-orange-50 to-white rounded-xl shadow-sm border-2 border-orange-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{booking.cleaningType}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(booking.status)}`}>
+                          {getStatusIcon(booking.status)} {getStatusLabel(booking.status)}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 flex items-center gap-2 mb-1">
+                        <UserIcon className="w-4 h-4" />
+                        Cleaner: {booking.cleanerName}
+                      </p>
+                      {booking.requestExpiresAt && (
+                        <div className="flex items-center gap-2 mt-2 text-orange-700 font-medium">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-sm">{getTimeUntilExpiry(booking.requestExpiresAt)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">€{booking.amount.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">{booking.duration}h service</p>
+                      <p className="text-xs text-orange-600 mt-1 font-semibold">Payment held</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Calendar className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium">{formatDate(booking.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Clock className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium">
+                        {booking.start} - {booking.end}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <p className="text-sm text-orange-900">
+                      <strong>⏳ Awaiting cleaner confirmation.</strong> You&apos;ll receive an email once they accept or reject. Your payment is held securely and will only be charged if the cleaner accepts.
+                    </p>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-orange-100 flex justify-between items-center">
+                    <p className="text-xs text-gray-500">Requested on {new Date(booking.createdAt).toLocaleDateString()}</p>
+                    <span className="text-orange-600 hover:text-orange-700 text-sm font-medium">View Details →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Upcoming Bookings */}
         {upcomingBookings.length > 0 && (
@@ -188,7 +320,7 @@ export default function UserBookingsPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-xl font-semibold text-gray-900">{booking.cleaningType}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(booking.status)}`}>
-                          {getStatusIcon(booking.status)} {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          {getStatusIcon(booking.status)} {getStatusLabel(booking.status)}
                         </span>
                       </div>
                       <p className="text-gray-600 flex items-center gap-2 mb-1">
@@ -245,7 +377,7 @@ export default function UserBookingsPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-xl font-semibold text-gray-900">{booking.cleaningType}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(booking.status)}`}>
-                          {getStatusIcon(booking.status)} {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          {getStatusIcon(booking.status)} {getStatusLabel(booking.status)}
                         </span>
                       </div>
                       <p className="text-gray-600 flex items-center gap-2">
@@ -298,7 +430,8 @@ export default function UserBookingsPage() {
             ← Back to Home
           </Link>
         </div>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -21,20 +21,21 @@ interface Booking {
   platformFee: number;
   cleanerAmount: number;
   currency: string;
-  status: "confirmed" | "cancelled" | "completed";
+  status: "pending_acceptance" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
   createdAt: string;
   duration: number;
   completedAt?: string;
   cancelledAt?: string;
+  requestExpiresAt?: string;
 }
 
-type TabType = "upcoming" | "completed" | "cancelled";
+type TabType = "requests" | "upcoming" | "completed" | "cancelled";
 
 export default function CleanerBookingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>("upcoming");
+  const [activeTab, setActiveTab] = useState<TabType>("requests");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -136,6 +137,15 @@ export default function CleanerBookingsPage() {
 
   // Categorize bookings
   const now = new Date();
+
+  // Pending requests awaiting acceptance
+  const pendingRequests = bookings.filter((b) => b.status === "pending_acceptance")
+    .sort((a, b) => {
+      const expiresA = new Date(a.requestExpiresAt || 0).getTime();
+      const expiresB = new Date(b.requestExpiresAt || 0).getTime();
+      return expiresA - expiresB; // Most urgent first
+    });
+
   const upcomingBookings = bookings.filter((b) => {
     const bookingDate = new Date(`${b.date}T${b.start}`);
     return bookingDate > now && b.status === "confirmed";
@@ -146,7 +156,7 @@ export default function CleanerBookingsPage() {
     return bookingDate <= now || b.status === "completed";
   }).sort((a, b) => new Date(`${b.date}T${b.start}`).getTime() - new Date(`${a.date}T${a.start}`).getTime());
 
-  const cancelledBookings = bookings.filter((b) => b.status === "cancelled")
+  const cancelledBookings = bookings.filter((b) => b.status === "cancelled" || b.status === "rejected" || b.status === "expired")
     .sort((a, b) => new Date(`${b.date}T${b.start}`).getTime() - new Date(`${a.date}T${a.start}`).getTime());
 
   // Calculate earnings
@@ -159,7 +169,8 @@ export default function CleanerBookingsPage() {
   }).reduce((sum, b) => sum + (b.cleanerAmount || b.amount * 0.85), 0);
 
   // Get active bookings based on tab
-  const displayBookings = activeTab === "upcoming" ? upcomingBookings
+  const displayBookings = activeTab === "requests" ? pendingRequests
+    : activeTab === "upcoming" ? upcomingBookings
     : activeTab === "completed" ? completedBookings
     : cancelledBookings;
 
@@ -241,6 +252,21 @@ export default function CleanerBookingsPage() {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("requests")}
+            className={`relative px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === "requests"
+                ? "bg-orange-600 text-white shadow-md"
+                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Pending Requests ({pendingRequests.length})
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+                {pendingRequests.length}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setActiveTab("upcoming")}
             className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
@@ -394,13 +420,22 @@ export default function CleanerBookingsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No {activeTab} bookings
+              No {activeTab === "requests" ? "pending requests" : activeTab + " bookings"}
             </h3>
             <p className="text-gray-600 mb-6">
+              {activeTab === "requests" && "New booking requests will appear here"}
               {activeTab === "upcoming" && "Your upcoming cleaning jobs will appear here"}
               {activeTab === "completed" && "Completed jobs will appear here once you finish them"}
               {activeTab === "cancelled" && "Cancelled bookings will appear here"}
             </p>
+            {activeTab === "requests" && (
+              <Link
+                href="/cleaner/profile"
+                className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+              >
+                View Your Profile
+              </Link>
+            )}
           </div>
         )}
 

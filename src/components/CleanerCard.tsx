@@ -38,6 +38,7 @@ interface CleanerCardProps {
   name: string;
   photoUrl: string;
   rating?: number;
+  reviewCount?: number;
   location: string;
   pricePerHour: number;
   verified?: boolean;
@@ -51,6 +52,7 @@ export default function CleanerCard({
   name,
   photoUrl,
   rating = 0,
+  reviewCount = 0,
   location,
   pricePerHour,
   verified = true,
@@ -79,7 +81,7 @@ export default function CleanerCard({
 
   const formattedTime = nextAvailableDate ? formatAvailability(nextAvailableDate) : "Not available soon";
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number, reviewCount: number) => {
     const fullStars = Math.floor(rating);
     const halfStar = rating - fullStars >= 0.5;
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
@@ -89,7 +91,14 @@ export default function CleanerCard({
         {Array(fullStars).fill(0).map((_, i) => <span key={`full-${i}`} className="text-amber-400">★</span>)}
         {halfStar && <span className="text-amber-400">☆</span>}
         {Array(emptyStars).fill(0).map((_, i) => <span key={`empty-${i}`} className="text-gray-300">★</span>)}
-        <span className="ml-1.5 text-gray-600 text-sm font-medium">{rating.toFixed(1)}</span>
+        <span className="ml-1.5 text-gray-600 text-sm font-medium">
+          {rating > 0 ? rating.toFixed(1) : 'No reviews yet'}
+        </span>
+        {reviewCount > 0 && (
+          <span className="ml-1 text-gray-500 text-xs">
+            ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
+          </span>
+        )}
       </div>
     );
   };
@@ -134,7 +143,7 @@ export default function CleanerCard({
           </p>
 
           {/* Rating */}
-          <div>{renderStars(rating)}</div>
+          <div>{renderStars(rating, reviewCount)}</div>
 
           {/* Price */}
           <p className="text-xl font-bold text-gray-900">{pricePerHour}€<span className="text-sm font-normal text-gray-500">/hour</span></p>

@@ -17,32 +17,34 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Check if user is admin (add your admin UID here)
+    // Check if user is admin by checking their role in Firestore
     function isAdmin() {
-      return isSignedIn() && request.auth.uid in [
-        // Add your admin UIDs here, e.g.:
-        // 'admin-uid-1',
-        // 'admin-uid-2'
-      ];
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Validate email format
+    // Validate email format (returns true if email is empty/null or valid)
     function isValidEmail(email) {
-      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+      return email == null || email == '' || email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
 
     // ============================================
     // USERS COLLECTION
     // ============================================
     match /users/{userId} {
-      // Users can read their own profile
+      // Users can read their own profile, or admins can read all users
       allow read: if isOwner(userId) || isAdmin();
 
+      // Allow reading all users for admin dashboard
+      allow list: if isAdmin();
+
       // Users can create their own profile
+      // Email is optional for phone auth users
       allow create: if isSignedIn()
         && request.auth.uid == userId
-        && request.resource.data.keys().hasAll(['email', 'createdAt'])
-        && isValidEmail(request.resource.data.email);
+        && request.resource.data.keys().hasAll(['createdAt'])
+        && isValidEmail(request.resource.data.get('email', ''));
 
       // Users can update their own profile
       allow update: if isOwner(userId)
@@ -59,11 +61,15 @@ service cloud.firestore {
       // Anyone can read cleaner profiles (public listing)
       allow read: if true;
 
+      // Anyone can list cleaners (for browsing)
+      allow list: if true;
+
       // Only authenticated users can create cleaner profiles
+      // Email is optional for phone auth users
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['userId', 'name', 'email', 'createdAt'])
-        && isValidEmail(request.resource.data.email);
+        && request.resource.data.keys().hasAll(['userId', 'createdAt'])
+        && isValidEmail(request.resource.data.get('email', ''));
 
       // Cleaners can update their own profile
       allow update: if isSignedIn()
@@ -162,6 +168,39 @@ service cloud.firestore {
       // Cleaners can delete their own services
       allow delete: if isSignedIn()
         && resource.data.cleanerId == request.auth.uid;
+    }
+
+    // ============================================
+    // TICKETS COLLECTION (Dispute System)
+    // ============================================
+    match /tickets/{ticketId} {
+      // Users can read their own tickets, admins can read all
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Admins can list all tickets
+      allow list: if isAdmin();
+
+      // Authenticated users can create tickets
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['userId', 'type', 'subject', 'description', 'status', 'priority', 'createdAt'])
+        && request.resource.data.status == 'open'
+        && request.resource.data.type in ['dispute', 'refund', 'complaint', 'technical', 'other'];
+
+      // Users can update their own tickets (add messages), admins can update status/priority
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['messages', 'updatedAt'])
+        ) ||
+        (isAdmin() &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'priority', 'assignedTo', 'adminNotes', 'messages', 'updatedAt', 'resolvedAt', 'resolvedBy'])
+        )
+      );
+
+      // Only admins can delete tickets
+      allow delete: if isAdmin();
     }
 
     // ============================================

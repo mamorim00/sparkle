@@ -20,7 +20,13 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+      // Force redirect to home page after logout
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   const handleLocationSelect = (loc: string) => {
@@ -45,7 +51,15 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="space-x-4">
+        <div className="flex items-center space-x-4">
+          {user && (
+            <Link
+              href="/support"
+              className="text-white hover:text-primary-light transition"
+            >
+              Support
+            </Link>
+          )}
           {user ? (
             <>
               <span className="text-gray-700">Hi, {user.email}</span>

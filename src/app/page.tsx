@@ -6,6 +6,7 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import CleanerCard from "../components/CleanerCard";
 import ServiceBookingModal from "../components/ServiceBookingModal";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLocation } from "../context/LocationContext";
 import { SERVICES, type Service } from "../lib/constants";
 
@@ -77,6 +78,7 @@ const ALL_SERVICES: ServiceWithIcon[] = SERVICES.map(service => ({
 
 export default function HomePage() {
   const { location } = useLocation();
+  const router = useRouter();
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,13 +92,8 @@ export default function HomePage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const handleSelectService = (serviceId: string) => {
-    const service = ALL_SERVICES.find((s) => s.id === serviceId);
-    if (service) {
-      setSelectedService(service);
-      setModalOpen(true);
-    }
-    setSearchTerm("");
-    setDropdownOpen(false);
+    // Redirect to cleaners page with service filter
+    router.push(`/cleaners?service=${serviceId}`);
   };
 
   const handleServiceCardClick = (service: Service) => {

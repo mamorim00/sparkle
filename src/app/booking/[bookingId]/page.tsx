@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { auth, db } from "../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -135,7 +135,12 @@ export default function BookingDetailsPage() {
   const getStatusBadge = () => {
     if (!booking) return null;
 
-    const statusConfig = {
+    const statusConfig: Record<string, { icon: React.JSX.Element; color: string; label: string }> = {
+      pending_acceptance: {
+        icon: <AlertCircle className="w-5 h-5" />,
+        color: "bg-orange-100 text-orange-800 border-orange-200",
+        label: "Awaiting Cleaner Confirmation",
+      },
       confirmed: {
         icon: <CheckCircle className="w-5 h-5" />,
         color: "bg-green-100 text-green-800 border-green-200",
@@ -151,9 +156,19 @@ export default function BookingDetailsPage() {
         color: "bg-gray-100 text-gray-800 border-gray-200",
         label: "Completed",
       },
+      rejected: {
+        icon: <XCircle className="w-5 h-5" />,
+        color: "bg-red-100 text-red-800 border-red-200",
+        label: "Rejected by Cleaner",
+      },
+      expired: {
+        icon: <AlertCircle className="w-5 h-5" />,
+        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+        label: "Request Expired",
+      },
     };
 
-    const config = statusConfig[booking.status];
+    const config = statusConfig[booking.status] || statusConfig.confirmed;
 
     return (
       <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${config.color}`}>

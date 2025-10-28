@@ -10,6 +10,7 @@ export interface Booking {
   cleanerName: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   serviceId?: string;
   cleaningType: string;
   date: string; // YYYY-MM-DD
@@ -23,21 +24,45 @@ export interface Booking {
   status: BookingStatus;
   payoutStatus: PayoutStatus;
   createdAt: string;
+
+  // Acceptance/Rejection fields (for request system)
+  requestExpiresAt?: string; // ISO timestamp for when request expires
+  acceptedAt?: string; // when cleaner accepted
+  rejectedAt?: string; // when cleaner rejected
+  rejectionReason?: string; // optional reason for rejection
+
+  // Cancellation fields
   cancelledAt?: string;
   cancelledBy?: string;
+  refundAmount?: number;
+  refundStatus?: RefundStatus;
+  refundedAt?: string;
+  refundId?: string | null; // Stripe refund ID
+
+  // Rescheduling fields
   rescheduledAt?: string;
   originalDate?: string;
   originalStart?: string;
   originalEnd?: string;
+
+  // Completion fields
+  completedAt?: string;
+
+  // Payment tracking
   paymentIntentId?: string;
   stripeSessionId?: string;
   createdVia?: "webhook" | "client";
-  refundAmount?: number;
-  refundStatus?: RefundStatus;
-  refundedAt?: string;
+  paymentCaptured?: boolean; // Whether payment has been captured (manual capture)
 }
 
-export type BookingStatus = "confirmed" | "cancelled" | "completed";
+export type BookingStatus =
+  | "pending_acceptance" // Customer paid, awaiting cleaner acceptance
+  | "confirmed"          // Cleaner accepted, booking confirmed
+  | "completed"          // Service completed
+  | "cancelled"          // Cancelled by customer or cleaner
+  | "rejected"           // Cleaner rejected the request
+  | "expired";           // Request expired (cleaner didn't respond in time)
+
 export type PayoutStatus = "pending" | "paid" | "failed";
 export type RefundStatus = "none" | "pending" | "partial" | "full" | "failed";
 
@@ -63,4 +88,39 @@ export interface RescheduleBookingResponse {
   success: boolean;
   message: string;
   booking?: Booking;
+}
+
+export interface AcceptBookingRequest {
+  bookingId: string;
+  cleanerId: string; // verify cleaner is authorized
+}
+
+export interface AcceptBookingResponse {
+  success: boolean;
+  message: string;
+  booking?: Booking;
+}
+
+export interface RejectBookingRequest {
+  bookingId: string;
+  cleanerId: string; // verify cleaner is authorized
+  reason?: string;
+}
+
+export interface RejectBookingResponse {
+  success: boolean;
+  message: string;
+  alternativeCleaners?: AlternativeCleaner[];
+}
+
+export interface AlternativeCleaner {
+  id: string;
+  name: string;
+  username?: string;
+  email: string;
+  photoUrl?: string;
+  pricePerHour: number;
+  rating?: number;
+  nextAvailable: string; // ISO timestamp or "Available for this slot"
+  bookingUrl: string; // Direct link to book with this cleaner
 }
