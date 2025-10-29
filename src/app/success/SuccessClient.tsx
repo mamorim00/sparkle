@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../lib/firebase";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
@@ -46,6 +46,7 @@ export default function SuccessClient() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const bookingFoundRef = useRef(false);
 
   useEffect(() => {
     const id = searchParams.get("session_id");
@@ -74,7 +75,8 @@ export default function SuccessClient() {
         unsubscribe = onSnapshot(
           bookingRef,
           (docSnap) => {
-            if (docSnap.exists()) {
+            if (docSnap.exists() && !bookingFoundRef.current) {
+              bookingFoundRef.current = true;
               const bookingData = docSnap.data() as Booking;
               setBooking(bookingData);
               setLoading(false);
@@ -96,7 +98,8 @@ export default function SuccessClient() {
 
         // Also do an initial check in case the booking was already created
         const bookingSnap = await getDoc(bookingRef);
-        if (bookingSnap.exists()) {
+        if (bookingSnap.exists() && !bookingFoundRef.current) {
+          bookingFoundRef.current = true;
           const bookingData = bookingSnap.data() as Booking;
           setBooking(bookingData);
           setLoading(false);
@@ -106,7 +109,7 @@ export default function SuccessClient() {
 
         // Set timeout to stop waiting after 15 seconds
         pollTimeout = setTimeout(() => {
-          if (!booking) {
+          if (!bookingFoundRef.current) {
             console.warn("⚠️ Booking not created by webhook within 15 seconds");
             setBookingError("Booking is being processed. Please check your email for confirmation.");
             setLoading(false);
@@ -127,7 +130,7 @@ export default function SuccessClient() {
       if (unsubscribe) unsubscribe();
       if (pollTimeout) clearTimeout(pollTimeout);
     };
-  }, [sessionId, booking]);
+  }, [sessionId]); // Don't include booking to avoid infinite loop
 
   if (loading) {
     return (
