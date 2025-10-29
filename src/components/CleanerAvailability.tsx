@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { db } from "../lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
@@ -17,9 +17,13 @@ interface CleanerScheduleProps {
   cleanerId: string;
 }
 
+export interface CleanerScheduleRef {
+  saveSchedule: () => Promise<void>;
+}
+
 const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-export default function CleanerSchedule({ cleanerId }: CleanerScheduleProps) {
+const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ cleanerId }, ref) => {
   const [schedule, setSchedule] = useState<Record<string, TimeSlot[]>>({});
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +106,11 @@ export default function CleanerSchedule({ cleanerId }: CleanerScheduleProps) {
       alert("Failed to save schedule.");
     }
   };
+
+  // Expose saveSchedule function to parent via ref
+  useImperativeHandle(ref, () => ({
+    saveSchedule,
+  }));
 
   if (loading) return <p>Loading schedule...</p>;
 
@@ -192,10 +201,14 @@ export default function CleanerSchedule({ cleanerId }: CleanerScheduleProps) {
       {/* Save Button */}
       <button
         onClick={saveSchedule}
-        className="mt-6 w-full bg-primary text-white py-2 rounded hover:bg-green-600"
+        className="mt-6 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold"
       >
         Save Schedule
       </button>
     </div>
   );
-}
+});
+
+CleanerSchedule.displayName = "CleanerSchedule";
+
+export default CleanerSchedule;

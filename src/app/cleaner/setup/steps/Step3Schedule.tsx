@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth } from "@/lib/firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
-import CleanerAvailability from "@/components/CleanerAvailability";
+import CleanerAvailability, { CleanerScheduleRef } from "@/components/CleanerAvailability";
 
 // Your types
 interface ScheduleItem {
@@ -28,6 +28,7 @@ interface Step3ScheduleProps {
 
 export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3ScheduleProps) {
   const [user, setUser] = useState<User | null>(null);
+  const scheduleRef = useRef<CleanerScheduleRef>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -36,7 +37,17 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
     return () => unsubscribe();
   }, []);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Save the schedule before proceeding
+    if (scheduleRef.current) {
+      try {
+        await scheduleRef.current.saveSchedule();
+      } catch (error) {
+        console.error("Error saving schedule:", error);
+        // Still continue even if save fails, user can save later
+      }
+    }
+
     const scheduleData = {
       schedule: cleanerData.schedule || [],
     };
@@ -60,7 +71,7 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
 
       {/* Schedule Management Component */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
-        <CleanerAvailability cleanerId={user.uid} />
+        <CleanerAvailability ref={scheduleRef} cleanerId={user.uid} />
       </div>
 
       <div className="flex justify-between mt-6">
