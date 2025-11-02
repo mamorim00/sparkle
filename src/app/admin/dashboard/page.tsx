@@ -224,14 +224,14 @@ export default function AdminDashboard() {
 
   // Filter bookings based on search
   const filteredBookings = bookings.filter(b =>
-    b.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.cleanerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.cleaningType.toLowerCase().includes(searchTerm.toLowerCase())
+    (b.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (b.cleanerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (b.cleaningType || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Filter users based on search
   const filteredUsers = users.filter(u =>
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 

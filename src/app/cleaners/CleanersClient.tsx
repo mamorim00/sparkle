@@ -6,6 +6,7 @@ import { db } from "../../lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import CleanerCard from "../../components/CleanerCard";
 import { useLocation } from "../../context/LocationContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { SERVICES_BASIC, DEFAULT_CLEANER_IMAGE } from "../../lib/constants";
 import { X, SlidersHorizontal } from "lucide-react";
 
@@ -28,6 +29,7 @@ export default function CleanersClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { location } = useLocation();
+  const { t } = useLanguage();
 
   const [serviceId, setServiceId] = useState<string>("");
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -97,7 +99,7 @@ export default function CleanersClient() {
     setMinRating(0);
   };
 
-  if (loading) return <p className="text-center py-20">Loading cleaners...</p>;
+  if (loading) return <p className="text-center py-20">{t('common.loading')}</p>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,10 +107,10 @@ export default function CleanersClient() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Available Cleaners in {location}
+            {t('cleanersPage.title')} {location}
           </h1>
           <p className="text-gray-600">
-            {filteredCleaners.length} cleaner{filteredCleaners.length !== 1 ? "s" : ""} found
+            {filteredCleaners.length} {filteredCleaners.length !== 1 ? t('cleanersPage.cleanersFound') : t('cleanersPage.cleanerFound')}
           </p>
         </div>
 
@@ -125,29 +127,29 @@ export default function CleanersClient() {
           <aside className="hidden lg:block w-80 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('cleanersPage.filters')}</h2>
                 <button
                   onClick={handleResetFilters}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Reset
+                  {t('cleanersPage.reset')}
                 </button>
               </div>
 
               {/* Service Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Service Type
+                  {t('cleanersPage.serviceType')}
                 </label>
                 <select
                   value={serviceId}
                   onChange={handleServiceChange}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
-                  <option value="">All Services</option>
+                  <option value="">{t('cleanersPage.allServices')}</option>
                   {SERVICES_BASIC.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      {t(`services.${s.id}.name`)}
                     </option>
                   ))}
                 </select>
@@ -156,7 +158,7 @@ export default function CleanersClient() {
               {/* Price Range Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Price Per Hour
+                  {t('cleanersPage.pricePerHour')}
                 </label>
                 <div className="space-y-4">
                   <div>
@@ -179,7 +181,7 @@ export default function CleanersClient() {
               {/* Rating Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Minimum Rating
+                  {t('cleanersPage.minimumRating')}
                 </label>
                 <div className="space-y-2">
                   {[0, 3, 4, 4.5].map((rating) => (
@@ -194,12 +196,12 @@ export default function CleanersClient() {
                     >
                       <span className="flex items-center gap-2">
                         {rating === 0 ? (
-                          "All Ratings"
+                          t('cleanersPage.allRatings')
                         ) : (
                           <>
                             {rating}
                             <span className="text-yellow-500">★</span>
-                            <span className="text-gray-500">& up</span>
+                            <span className="text-gray-500">{t('cleanersPage.andUp')}</span>
                           </>
                         )}
                       </span>
@@ -224,13 +226,13 @@ export default function CleanersClient() {
               >
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('cleanersPage.filters')}</h2>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={handleResetFilters}
                         className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        Reset
+                        {t('cleanersPage.reset')}
                       </button>
                       <button
                         onClick={() => setSidebarOpen(false)}
@@ -325,7 +327,7 @@ export default function CleanersClient() {
                     onClick={() => setSidebarOpen(false)}
                     className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                   >
-                    Apply Filters
+                    {t('cleanersPage.applyFilters')}
                   </button>
                 </div>
               </aside>
@@ -341,15 +343,15 @@ export default function CleanersClient() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No cleaners found</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('cleanersPage.noCleanersFound')}</h3>
                 <p className="text-gray-600 mb-6">
-                  Try adjusting your filters to see more results
+                  {t('cleanersPage.tryAdjustingFilters')}
                 </p>
                 <button
                   onClick={handleResetFilters}
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Reset all filters
+                  {t('cleanersPage.resetAllFilters')}
                 </button>
               </div>
             ) : (

@@ -8,6 +8,7 @@ import ServiceBookingModal from "../components/ServiceBookingModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocation } from "../context/LocationContext";
+import { useLanguage } from "../context/LanguageContext";
 import { SERVICES, type Service } from "../lib/constants";
 
 interface Cleaner {
@@ -78,6 +79,7 @@ const ALL_SERVICES: ServiceWithIcon[] = SERVICES.map(service => ({
 
 export default function HomePage() {
   const { location } = useLocation();
+  const { t } = useLanguage();
   const router = useRouter();
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,10 +149,10 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-indigo-50 via-blue-50 to-primary py-28">
         <div className="container mx-auto px-6 text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-primary-dark tracking-tight leading-tight">
-            Find Trusted Cleaners
+            {t('home.heroTitle')}
           </h1>
           <p className="text-xl md:text-2xl mb-12 text-neutral font-light max-w-3xl mx-auto">
-            Book professional cleaning services in just a few clicks
+            {t('home.heroSubtitle')}
           </p>
 
           {/* Autocomplete Search */}
@@ -165,7 +167,7 @@ export default function HomePage() {
                 }}
                 onFocus={() => setDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
-                placeholder="What service do you need?"
+                placeholder={t('home.searchPlaceholder')}
                 className="w-full px-6 py-4 pr-12 rounded-2xl border-2 border-neutral-light/20 bg-white shadow-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-neutral text-lg transition-all"
               />
 
@@ -205,7 +207,7 @@ export default function HomePage() {
       {/* Popular Services */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-primary-dark mb-14 text-center tracking-tight">
-          Popular Services
+          {t('home.popularServices')}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,13 +223,13 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {service.name}
+                    {t(`services.${service.id}.name`)}
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    {service.description}
+                    {t(`services.${service.id}.description`)}
                   </p>
                   <p className="text-xs text-blue-600 font-medium mt-2">
-                    {service.durationHours} hour service
+                    {service.durationHours} {t('common.hours')} {t('common.service')}
                   </p>
                 </div>
               </div>
@@ -239,16 +241,16 @@ export default function HomePage() {
       {/* Popular Cleaners */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-primary-dark mb-14 text-center tracking-tight">
-          Popular Cleaners
+          {t('home.popularCleaners')}
         </h2>
 
         {loading ? (
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-light border-t-accent"></div>
-            <p className="mt-4 text-neutral text-lg">Loading cleaners...</p>
+            <p className="mt-4 text-neutral text-lg">{t('common.loading')}</p>
           </div>
         ) : cleaners.length === 0 ? (
-          <p className="text-center text-neutral text-lg">No cleaners available yet.</p>
+          <p className="text-center text-neutral text-lg">{t('home.noCleanersYet')}</p>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
@@ -281,7 +283,7 @@ export default function HomePage() {
                           shadow-md hover:shadow-lg
                           transform hover:-translate-y-0.5"
               >
-                View All Cleaners
+                {t('home.viewAllCleaners')}
               </Link>
             </div>
           </>
