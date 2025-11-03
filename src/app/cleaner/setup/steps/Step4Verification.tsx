@@ -6,6 +6,7 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Schedule and profile types
 interface ScheduleItem {
@@ -39,6 +40,7 @@ interface Step4VerificationProps {
 }
 
 export default function Step4Verification({ onBack, cleanerData }: Step4VerificationProps) {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [businessId, setBusinessId] = useState("");
   const [insuranceCertificate, setInsuranceCertificate] = useState<File | null>(null);
@@ -108,7 +110,7 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
       router.push("/cleaner/profile");
     } catch (error) {
       console.error("Error saving cleaner profile:", error);
-      alert("Failed to save profile. Please try again.");
+      alert(t('cleanerSetup.step5.failedSave'));
       setSaving(false);
     }
   };
@@ -116,32 +118,32 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
   if (!user) {
     return (
       <div className="p-4 text-center">
-        <p className="text-gray-600">Please log in to continue.</p>
+        <p className="text-gray-600">{t('cleanerSetup.step5.pleaseLogin')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Step 4: Verification Documents</h2>
+      <h2 className="text-xl font-bold mb-4">{t('cleanerSetup.step5.title')}</h2>
       <p className="text-sm mb-4">
-        Please provide your business ID, insurance certificate, and other relevant documents.
+        {t('cleanerSetup.step5.description')}
       </p>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Business ID</label>
+          <label className="block text-sm font-medium">{t('cleanerSetup.step5.businessId')}</label>
           <input
             type="text"
             value={businessId}
             onChange={(e) => setBusinessId(e.target.value)}
             className="w-full border px-3 py-2 rounded mt-1"
-            placeholder="Enter your Business ID"
+            placeholder={t('cleanerSetup.step5.businessIdPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Insurance Certificate</label>
+          <label className="block text-sm font-medium">{t('cleanerSetup.step5.insuranceCertificate')}</label>
           <input
             type="file"
             onChange={(e) => setInsuranceCertificate(e.target.files?.[0] || null)}
@@ -150,7 +152,7 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Other Documents</label>
+          <label className="block text-sm font-medium">{t('cleanerSetup.step5.otherDocuments')}</label>
           <input
             type="file"
             onChange={(e) => setOtherDocs(e.target.files?.[0] || null)}
@@ -164,7 +166,7 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
           onClick={onBack}
           className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
         >
-          Back
+          {t('common.back')}
         </button>
 
         <button
@@ -172,7 +174,7 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
           disabled={saving}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Finish & Go to Profile"}
+          {saving ? t('cleanerSetup.step5.saving') : t('cleanerSetup.step5.finish')}
         </button>
       </div>
     </div>

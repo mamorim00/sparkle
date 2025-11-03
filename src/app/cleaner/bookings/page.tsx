@@ -6,6 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, DollarSign, User as UserIcon, CheckCircle } from "lucide-react";
+import { useLanguage } from "../../../context/LanguageContext";
 
 interface Booking {
   id: string;
@@ -32,6 +33,7 @@ interface Booking {
 type TabType = "requests" | "upcoming" | "completed" | "cancelled";
 
 export default function CleanerBookingsPage() {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,11 +104,11 @@ export default function CleanerBookingsPage() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
 
     if (hours < 0) return null;
-    if (hours === 0) return "Starting soon!";
-    if (hours < 24) return `Starts in ${hours} hour${hours !== 1 ? "s" : ""}`;
+    if (hours === 0) return t('cleanerBookings.startsSoon');
+    if (hours < 24) return `${t('cleanerBookings.startsIn')} ${hours} ${hours !== 1 ? t('cleanerBookings.hours') : t('cleanerBookings.hour')}`;
     const days = Math.floor(hours / 24);
-    if (days === 1) return "Tomorrow";
-    return `In ${days} days`;
+    if (days === 1) return t('cleanerBookings.tomorrow');
+    return `${t('cleanerBookings.inDays')} ${days} ${t('cleanerBookings.days')}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -179,7 +181,7 @@ export default function CleanerBookingsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Loading your bookings...</p>
+          <p className="text-lg mt-4 text-gray-600">{t('cleanerBookings.loadingBookings')}</p>
         </div>
       </div>
     );
@@ -188,13 +190,13 @@ export default function CleanerBookingsPage() {
   if (!user) {
     return (
       <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-        <p className="text-gray-600 mb-6">You need to be logged in as a cleaner to view your bookings.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('cleanerBookings.pleaseLogIn')}</h2>
+        <p className="text-gray-600 mb-6">{t('cleanerBookings.needLoggedInCleaner')}</p>
         <Link
           href="/auth/login"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Go to Login
+          {t('cleanerBookings.goToLogin')}
         </Link>
       </div>
     );
@@ -206,8 +208,8 @@ export default function CleanerBookingsPage() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Jobs</h1>
-          <p className="text-gray-600">View and manage your cleaning appointments</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('cleanerBookings.title')}</h1>
+          <p className="text-gray-600">{t('cleanerBookings.subtitle')}</p>
         </div>
 
         {/* Stats */}
@@ -215,7 +217,7 @@ export default function CleanerBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Upcoming Jobs</p>
+                <p className="text-sm text-gray-600">{t('cleanerBookings.upcomingJobs')}</p>
                 <p className="text-3xl font-bold text-blue-600">{upcomingBookings.length}</p>
               </div>
               <Clock className="w-10 h-10 text-blue-600" />
@@ -224,7 +226,7 @@ export default function CleanerBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-sm text-gray-600">{t('cleanerBookings.completedJobs')}</p>
                 <p className="text-3xl font-bold text-green-600">{completedBookings.length}</p>
               </div>
               <CheckCircle className="w-10 h-10 text-green-600" />
@@ -233,7 +235,7 @@ export default function CleanerBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">This Week</p>
+                <p className="text-sm text-gray-600">{t('cleanerBookings.thisWeek')}</p>
                 <p className="text-3xl font-bold text-green-600">€{thisWeekEarnings.toFixed(2)}</p>
               </div>
               <DollarSign className="w-10 h-10 text-green-600" />
@@ -242,7 +244,7 @@ export default function CleanerBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Earned</p>
+                <p className="text-sm text-gray-600">{t('cleanerBookings.totalEarned')}</p>
                 <p className="text-3xl font-bold text-green-600">€{totalEarnings.toFixed(2)}</p>
               </div>
               <DollarSign className="w-10 h-10 text-green-600" />
@@ -260,7 +262,7 @@ export default function CleanerBookingsPage() {
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Pending Requests ({pendingRequests.length})
+            {t('cleanerBookings.pendingRequests')} ({pendingRequests.length})
             {pendingRequests.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
                 {pendingRequests.length}
@@ -275,7 +277,7 @@ export default function CleanerBookingsPage() {
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Upcoming ({upcomingBookings.length})
+            {t('cleanerBookings.upcoming')} ({upcomingBookings.length})
           </button>
           <button
             onClick={() => setActiveTab("completed")}
@@ -285,7 +287,7 @@ export default function CleanerBookingsPage() {
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Completed ({completedBookings.length})
+            {t('cleanerBookings.completed')} ({completedBookings.length})
           </button>
           <button
             onClick={() => setActiveTab("cancelled")}
@@ -295,7 +297,7 @@ export default function CleanerBookingsPage() {
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Cancelled ({cancelledBookings.length})
+            {t('cleanerBookings.cancelled')} ({cancelledBookings.length})
           </button>
         </div>
 
@@ -320,7 +322,7 @@ export default function CleanerBookingsPage() {
                     </span>
                     {todayBooking && (
                       <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold border border-yellow-300">
-                        📅 Today&apos;s Job
+                        📅 {t('cleanerBookings.todaysJob')}
                       </span>
                     )}
                     {timeUntil && activeTab === "upcoming" && (
@@ -337,22 +339,22 @@ export default function CleanerBookingsPage() {
                   <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-green-700 mb-1 font-medium">💰 Your Earnings:</p>
+                        <p className="text-sm text-green-700 mb-1 font-medium">💰 {t('cleanerBookings.yourEarnings')}</p>
                         <p className="text-3xl font-bold text-green-600">
                           €{(booking.cleanerAmount || booking.amount * 0.85).toFixed(2)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-600 mb-1">Total Amount</p>
+                        <p className="text-xs text-gray-600 mb-1">{t('cleanerBookings.totalAmount')}</p>
                         <p className="text-lg font-semibold text-gray-700">€{booking.amount.toFixed(2)}</p>
-                        <p className="text-xs text-gray-500">{booking.duration}h service</p>
+                        <p className="text-xs text-gray-500">{booking.duration}h {t('common.service')}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Customer Information */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Customer Details:</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">{t('cleanerBookings.customerDetails')}</p>
                     <div className="space-y-2">
                       <p className="text-gray-900 flex items-center gap-2">
                         <UserIcon className="w-4 h-4 text-gray-600" />
@@ -386,7 +388,7 @@ export default function CleanerBookingsPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
                     >
-                      📧 Email Customer
+                      📧 {t('cleanerBookings.emailCustomer')}
                     </a>
                     {booking.customerPhone ? (
                       <a
@@ -394,22 +396,22 @@ export default function CleanerBookingsPage() {
                         onClick={(e) => e.stopPropagation()}
                         className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
                       >
-                        📱 Call Customer
+                        📱 {t('cleanerBookings.callCustomer')}
                       </a>
                     ) : (
                       <Link
                         href={`/booking/${booking.id}`}
                         className="flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-sm"
                       >
-                        📋 View Details
+                        📋 {t('cleanerBookings.viewDetails')}
                       </Link>
                     )}
                   </div>
 
                   {/* Footer */}
                   <div className="pt-4 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
-                    <span>Booking ID: {booking.id.slice(0, 8)}...</span>
-                    <span>Booked on {new Date(booking.createdAt).toLocaleDateString()}</span>
+                    <span>{t('cleanerBookings.bookingId')}: {booking.id.slice(0, 8)}...</span>
+                    <span>{t('cleanerBookings.bookedOn')} {new Date(booking.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               );
@@ -420,20 +422,20 @@ export default function CleanerBookingsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No {activeTab === "requests" ? "pending requests" : activeTab + " bookings"}
+              {t('cleanerBookings.no')} {activeTab === "requests" ? t('cleanerBookings.pendingRequests') : activeTab + " " + t('cleanerBookings.bookings')}
             </h3>
             <p className="text-gray-600 mb-6">
-              {activeTab === "requests" && "New booking requests will appear here"}
-              {activeTab === "upcoming" && "Your upcoming cleaning jobs will appear here"}
-              {activeTab === "completed" && "Completed jobs will appear here once you finish them"}
-              {activeTab === "cancelled" && "Cancelled bookings will appear here"}
+              {activeTab === "requests" && t('cleanerBookings.newRequestsAppear')}
+              {activeTab === "upcoming" && t('cleanerBookings.upcomingJobsAppear')}
+              {activeTab === "completed" && t('cleanerBookings.completedAppear')}
+              {activeTab === "cancelled" && t('cleanerBookings.cancelledAppear')}
             </p>
             {activeTab === "requests" && (
               <Link
                 href="/cleaner/profile"
                 className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
               >
-                View Your Profile
+                {t('cleanerBookings.viewYourProfile')}
               </Link>
             )}
           </div>
@@ -443,13 +445,13 @@ export default function CleanerBookingsPage() {
         {bookings.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No bookings yet</h3>
-            <p className="text-gray-600 mb-6">Your upcoming cleaning jobs will appear here</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('cleanerBookings.noBookingsYet')}</h3>
+            <p className="text-gray-600 mb-6">{t('cleanerBookings.upcomingAppear')}</p>
             <Link
               href="/cleaner/profile"
               className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
             >
-              View Your Profile
+              {t('cleanerBookings.viewYourProfile')}
             </Link>
           </div>
         )}
@@ -457,10 +459,10 @@ export default function CleanerBookingsPage() {
         {/* Navigation */}
         <div className="mt-8 flex justify-between items-center">
           <Link href="/cleaner-dashboard" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to Dashboard
+            ← {t('cleanerBookings.backToDashboard')}
           </Link>
           <Link href="/cleaner/profile" className="text-blue-600 hover:text-blue-700 font-medium">
-            View Profile →
+            {t('cleanerBookings.viewProfile')} →
           </Link>
         </div>
       </div>

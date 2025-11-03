@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, DollarSign, User as UserIcon, AlertCircle, Loader } from "lucide-react";
 import ProtectedRoute from "../../../components/ProtectedRoute";
+import { useLanguage } from "../../../context/LanguageContext";
 
 interface Booking {
   id: string;
@@ -24,6 +25,7 @@ interface Booking {
 }
 
 export default function UserBookingsPage() {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,17 +117,17 @@ export default function UserBookingsPage() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending_acceptance":
-        return "Awaiting Confirmation";
+        return t('userBookings.statusAwaitingConfirmation');
       case "confirmed":
-        return "Confirmed";
+        return t('userBookings.statusConfirmed');
       case "completed":
-        return "Completed";
+        return t('userBookings.statusCompleted');
       case "cancelled":
-        return "Cancelled";
+        return t('userBookings.statusCancelled');
       case "rejected":
-        return "Rejected";
+        return t('userBookings.statusRejected');
       case "expired":
-        return "Expired";
+        return t('userBookings.statusExpired');
       default:
         return status;
     }
@@ -136,15 +138,15 @@ export default function UserBookingsPage() {
     const expiryTime = new Date(expiresAt).getTime();
     const diff = expiryTime - now;
 
-    if (diff <= 0) return "Expired";
+    if (diff <= 0) return t('userBookings.expired');
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m remaining`;
+      return `${hours}h ${minutes}m ${t('userBookings.remaining')}`;
     }
-    return `${minutes}m remaining`;
+    return `${minutes}m ${t('userBookings.remaining')}`;
   };
 
   if (loading) {
@@ -153,7 +155,7 @@ export default function UserBookingsPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-lg mt-4 text-gray-600">Loading your bookings...</p>
+            <p className="text-lg mt-4 text-gray-600">{t('userBookings.loading')}</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -185,8 +187,8 @@ export default function UserBookingsPage() {
         <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Bookings</h1>
-          <p className="text-gray-600">View and manage your cleaning appointments</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('userBookings.title')}</h1>
+          <p className="text-gray-600">{t('userBookings.subtitle')}</p>
         </div>
 
         {/* Stats */}
@@ -194,7 +196,7 @@ export default function UserBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Awaiting</p>
+                <p className="text-sm text-gray-600">{t('userBookings.awaiting')}</p>
                 <p className="text-3xl font-bold text-orange-600">{pendingBookings.length}</p>
               </div>
               <Loader className="w-10 h-10 text-orange-600" />
@@ -203,7 +205,7 @@ export default function UserBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Upcoming</p>
+                <p className="text-sm text-gray-600">{t('userBookings.upcoming')}</p>
                 <p className="text-3xl font-bold text-blue-600">{upcomingBookings.length}</p>
               </div>
               <Clock className="w-10 h-10 text-blue-600" />
@@ -212,7 +214,7 @@ export default function UserBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total</p>
+                <p className="text-sm text-gray-600">{t('userBookings.total')}</p>
                 <p className="text-3xl font-bold text-gray-900">{bookings.length}</p>
               </div>
               <Calendar className="w-10 h-10 text-gray-600" />
@@ -221,7 +223,7 @@ export default function UserBookingsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Spent</p>
+                <p className="text-sm text-gray-600">{t('userBookings.totalSpent')}</p>
                 <p className="text-3xl font-bold text-green-600">
                   €
                   {bookings
@@ -240,7 +242,7 @@ export default function UserBookingsPage() {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <AlertCircle className="w-6 h-6 text-orange-600" />
-              Awaiting Confirmation
+              {t('userBookings.awaitingConfirmation')}
             </h2>
             <div className="space-y-4">
               {pendingBookings.map((booking) => (
@@ -259,7 +261,7 @@ export default function UserBookingsPage() {
                       </div>
                       <p className="text-gray-600 flex items-center gap-2 mb-1">
                         <UserIcon className="w-4 h-4" />
-                        Cleaner: {booking.cleanerName}
+                        {t('userBookings.cleaner')}: {booking.cleanerName}
                       </p>
                       {booking.requestExpiresAt && (
                         <div className="flex items-center gap-2 mt-2 text-orange-700 font-medium">
@@ -270,8 +272,8 @@ export default function UserBookingsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">€{booking.amount.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">{booking.duration}h service</p>
-                      <p className="text-xs text-orange-600 mt-1 font-semibold">Payment held</p>
+                      <p className="text-sm text-gray-500">{booking.duration}h {t('common.service')}</p>
+                      <p className="text-xs text-orange-600 mt-1 font-semibold">{t('userBookings.paymentHeld')}</p>
                     </div>
                   </div>
 
@@ -290,13 +292,13 @@ export default function UserBookingsPage() {
 
                   <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <p className="text-sm text-orange-900">
-                      <strong>⏳ Awaiting cleaner confirmation.</strong> You&apos;ll receive an email once they accept or reject. Your payment is held securely and will only be charged if the cleaner accepts.
+                      <strong>⏳ {t('userBookings.awaitingCleanerConfirmation')}</strong> {t('userBookings.awaitingDescription')}
                     </p>
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-orange-100 flex justify-between items-center">
-                    <p className="text-xs text-gray-500">Requested on {new Date(booking.createdAt).toLocaleDateString()}</p>
-                    <span className="text-orange-600 hover:text-orange-700 text-sm font-medium">View Details →</span>
+                    <p className="text-xs text-gray-500">{t('userBookings.requestedOn')} {new Date(booking.createdAt).toLocaleDateString()}</p>
+                    <span className="text-orange-600 hover:text-orange-700 text-sm font-medium">{t('userBookings.viewDetails')} →</span>
                   </div>
                 </Link>
               ))}
@@ -307,7 +309,7 @@ export default function UserBookingsPage() {
         {/* Upcoming Bookings */}
         {upcomingBookings.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Upcoming Bookings</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('userBookings.upcomingBookings')}</h2>
             <div className="space-y-4">
               {upcomingBookings.map((booking) => (
                 <Link
@@ -325,12 +327,12 @@ export default function UserBookingsPage() {
                       </div>
                       <p className="text-gray-600 flex items-center gap-2 mb-1">
                         <UserIcon className="w-4 h-4" />
-                        Cleaner: {booking.cleanerName}
+                        {t('userBookings.cleaner')}: {booking.cleanerName}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">€{booking.amount.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">{booking.duration}h service</p>
+                      <p className="text-sm text-gray-500">{booking.duration}h {t('common.service')}</p>
                     </div>
                   </div>
 
@@ -349,10 +351,10 @@ export default function UserBookingsPage() {
 
                   <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                     <p className="text-xs text-gray-500">
-                      Booked on {new Date(booking.createdAt).toLocaleDateString()}
+                      {t('userBookings.bookedOn')} {new Date(booking.createdAt).toLocaleDateString()}
                     </p>
                     <span className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                      View Details →
+                      {t('userBookings.viewDetails')} →
                     </span>
                   </div>
                 </Link>
@@ -364,7 +366,7 @@ export default function UserBookingsPage() {
         {/* Past Bookings */}
         {pastBookings.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Past Bookings</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('userBookings.pastBookings')}</h2>
             <div className="space-y-4">
               {pastBookings.map((booking) => (
                 <Link
@@ -382,12 +384,12 @@ export default function UserBookingsPage() {
                       </div>
                       <p className="text-gray-600 flex items-center gap-2">
                         <UserIcon className="w-4 h-4" />
-                        Cleaner: {booking.cleanerName}
+                        {t('userBookings.cleaner')}: {booking.cleanerName}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">€{booking.amount.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">{booking.duration}h service</p>
+                      <p className="text-sm text-gray-500">{booking.duration}h {t('common.service')}</p>
                     </div>
                   </div>
 
@@ -413,13 +415,13 @@ export default function UserBookingsPage() {
         {bookings.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No bookings yet</h3>
-            <p className="text-gray-600 mb-6">Start by booking a cleaning service!</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('userBookings.noBookingsYet')}</h3>
+            <p className="text-gray-600 mb-6">{t('userBookings.startBooking')}</p>
             <Link
               href="/"
               className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
             >
-              Browse Cleaners
+              {t('userBookings.browseCleaners')}
             </Link>
           </div>
         )}
@@ -427,7 +429,7 @@ export default function UserBookingsPage() {
         {/* Back Link */}
         <div className="mt-8 text-center">
           <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to Home
+            ← {t('userBookings.backToHome')}
           </Link>
         </div>
         </div>

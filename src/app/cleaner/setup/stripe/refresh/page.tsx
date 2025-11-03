@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { useLanguage } from "../../../../../context/LanguageContext";
 
 export default function StripeOnboardingRefreshPage() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,7 +20,7 @@ export default function StripeOnboardingRefreshPage() {
         const cleanerData = cleanerSnap.data();
 
         if (!cleanerData?.stripeAccountId) {
-          setError("No Stripe account found. Please start onboarding again.");
+          setError(t('stripeRefresh.noStripeAccount'));
           setLoading(false);
           return;
         }
@@ -31,7 +33,7 @@ export default function StripeOnboardingRefreshPage() {
         });
 
         if (!res.ok) {
-          throw new Error("Failed to create new onboarding link");
+          throw new Error(t('stripeRefresh.failedToRefresh'));
         }
 
         const { url } = await res.json();
@@ -40,7 +42,7 @@ export default function StripeOnboardingRefreshPage() {
         window.location.href = url;
       } catch (err) {
         console.error("Error refreshing onboarding:", err);
-        setError(err instanceof Error ? err.message : "Failed to refresh onboarding");
+        setError(err instanceof Error ? err.message : t('stripeRefresh.failedToRefresh'));
         setLoading(false);
       }
     };
@@ -49,7 +51,7 @@ export default function StripeOnboardingRefreshPage() {
       if (currentUser) {
         refreshOnboarding(currentUser.uid);
       } else {
-        setError("Not authenticated");
+        setError(t('stripeRefresh.notAuthenticated'));
         setLoading(false);
       }
     });
@@ -62,7 +64,7 @@ export default function StripeOnboardingRefreshPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Refreshing onboarding...</p>
+          <p className="text-lg mt-4 text-gray-600">{t('stripeRefresh.refreshingOnboarding')}</p>
         </div>
       </div>
     );
@@ -71,13 +73,13 @@ export default function StripeOnboardingRefreshPage() {
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ Error</h2>
+        <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ {t('stripeRefresh.error')}</h2>
         <p className="text-gray-600 mb-6">{error}</p>
         <a
           href="/cleaner/setup"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Back to Setup
+          {t('stripeRefresh.backToSetup')}
         </a>
       </div>
     );

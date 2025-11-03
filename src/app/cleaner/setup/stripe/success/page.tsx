@@ -6,8 +6,10 @@ import { auth, db } from "../../../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import Link from "next/link";
+import { useLanguage } from "../../../../../context/LanguageContext";
 
 export default function StripeOnboardingSuccessPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,7 +40,7 @@ export default function StripeOnboardingSuccessPage() {
         setLoading(false);
       } catch (err) {
         console.error("Error updating Stripe status:", err);
-        setError("Failed to update account status");
+        setError(t('stripeSuccess.failedToUpdate'));
         setLoading(false);
       }
     };
@@ -47,7 +49,7 @@ export default function StripeOnboardingSuccessPage() {
       if (currentUser) {
         updateStripeStatus(currentUser.uid);
       } else {
-        setError("Not authenticated");
+        setError(t('stripeSuccess.notAuthenticated'));
         setLoading(false);
       }
     });
@@ -60,7 +62,7 @@ export default function StripeOnboardingSuccessPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-green-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Completing setup...</p>
+          <p className="text-lg mt-4 text-gray-600">{t('stripeSuccess.completingSetup')}</p>
         </div>
       </div>
     );
@@ -69,13 +71,13 @@ export default function StripeOnboardingSuccessPage() {
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ Error</h2>
+        <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ {t('stripeSuccess.error')}</h2>
         <p className="text-gray-600 mb-6">{error}</p>
         <Link
           href="/cleaner/setup"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Back to Setup
+          {t('stripeSuccess.backToSetup')}
         </Link>
       </div>
     );
@@ -89,14 +91,14 @@ export default function StripeOnboardingSuccessPage() {
         </svg>
       </div>
 
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">✅ Payment Setup Complete!</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">✅ {t('stripeSuccess.paymentSetupComplete')}</h2>
       <p className="text-gray-600 mb-6">
-        Your bank account is now connected. You&apos;ll receive automatic payouts after completing jobs.
+        {t('stripeSuccess.bankConnected')}
       </p>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <p className="text-sm text-blue-800">
-          <strong>Next:</strong> Complete your verification documents to start receiving bookings.
+          <strong>{t('stripeSuccess.next')}</strong> {t('stripeSuccess.completeVerification')}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export default function StripeOnboardingSuccessPage() {
         onClick={() => router.push("/cleaner/setup")}
         className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
       >
-        Continue to Verification →
+        {t('stripeSuccess.continueToVerification')} →
       </button>
     </div>
   );

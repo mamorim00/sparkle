@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { auth } from "@/lib/firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
 import CleanerAvailability, { CleanerScheduleRef } from "@/components/CleanerAvailability";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Your types
 interface ScheduleItem {
@@ -27,6 +28,7 @@ interface Step3ScheduleProps {
 }
 
 export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3ScheduleProps) {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const scheduleRef = useRef<CleanerScheduleRef>(null);
 
@@ -57,16 +59,16 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
   if (!user) {
     return (
       <div className="p-4 text-center">
-        <p className="text-gray-600">Please log in to continue.</p>
+        <p className="text-gray-600">{t('cleanerSetup.step3.pleaseLogin')}</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold mb-2">Step 3: Manage Your Availability</h2>
+      <h2 className="text-3xl font-bold mb-2">{t('cleanerSetup.step3.title')}</h2>
       <p className="text-gray-600 mb-6">
-        Set your weekly schedule and add any blocked dates. You can always update this later from your dashboard.
+        {t('cleanerSetup.step3.description')}
       </p>
 
       {/* Schedule Management Component */}
@@ -79,14 +81,14 @@ export default function Step3Schedule({ onBack, onNext, cleanerData }: Step3Sche
           onClick={onBack}
           className="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors font-medium"
         >
-          ← Back
+          ← {t('common.back')}
         </button>
 
         <button
           onClick={handleNext}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
-          Continue to Verification →
+          {t('cleanerSetup.step3.continueToVerification')} →
         </button>
       </div>
     </div>

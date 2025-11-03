@@ -6,6 +6,7 @@ import Image from "next/image";
 import { db, auth } from "../../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { SERVICES, PRICE_MULTIPLIERS, MAX_SEARCH_DAYS } from "../../../lib/constants";
+import { useLanguage } from "../../../context/LanguageContext";
 
 import {
   doc,
@@ -124,6 +125,7 @@ const formatAvailability = (isoDateString: string) => {
 
 // --- COMPONENT START ---
 export default function BookPage() {
+  const { t } = useLanguage();
   const params = useParams<{ cleanerId?: string }>();
   const router = useRouter();
   const cleanerId = params?.cleanerId ?? "";
@@ -299,7 +301,7 @@ export default function BookPage() {
   
 
 
-  if (!cleaner) return <p>Loading...</p>;
+  if (!cleaner) return <p>{t('bookCleaner.loading')}</p>;
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -311,15 +313,15 @@ export default function BookPage() {
         <div>
           <h1 className="text-xl font-bold">{cleaner.name}</h1>
           <p className="text-gray-500">{cleaner.location}</p>
-          <p className="text-sm text-yellow-500">{cleaner.rating !== undefined ? `★ ${cleaner.rating.toFixed(1)}` : "No rating"}</p>
-          <p className="font-semibold">{cleaner.pricePerHour}€ / hour</p>
+          <p className="text-sm text-yellow-500">{cleaner.rating !== undefined ? `★ ${cleaner.rating.toFixed(1)}` : t('bookCleaner.noRating')}</p>
+          <p className="font-semibold">{cleaner.pricePerHour}€ / {t('bookCleaner.hour')}</p>
           {nextAvailableTime ? (
              <p className="text-sm text-green-600 font-bold mt-1">
-                 Next available ({selectedCleaning.durationHours}h): {formatAvailability(nextAvailableTime)}
+                 {t('bookCleaner.nextAvailable')} ({selectedCleaning.durationHours}h): {formatAvailability(nextAvailableTime)}
              </p>
           ) : (
              <p className="text-sm text-red-500 font-bold mt-1">
-                 No availability found for the next {MAX_SEARCH_DAYS} days.
+                 {t('bookCleaner.noAvailability', { days: MAX_SEARCH_DAYS })}
              </p>
           )}
         </div>
@@ -327,7 +329,7 @@ export default function BookPage() {
 
       {/* Cleaning Type */}
       <div className="mb-4">
-        <label className="block mb-1 font-semibold">Select Cleaning Type:</label>
+        <label className="block mb-1 font-semibold">{t('bookCleaner.selectCleaningType')}</label>
         <select
           value={selectedCleaning.name}
           onChange={e => setSelectedCleaning(CLEANING_TYPES.find(c => c.name === e.target.value) || CLEANING_TYPES[0])}
@@ -365,7 +367,7 @@ export default function BookPage() {
       {/* Message if no slots are found */}
       {days.length === 0 && searchOffset >= MAX_SEARCH_DAYS && (
           <div className="text-center py-4 text-gray-500">
-              No available slots found within the next {MAX_SEARCH_DAYS} days.
+              {t('bookCleaner.noSlotsFound', { days: MAX_SEARCH_DAYS })}
           </div>
       )}
 
@@ -375,7 +377,7 @@ export default function BookPage() {
           onClick={loadMoreDays}
           className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
         >
-          Load more available days
+          {t('bookCleaner.loadMoreDays')}
         </button>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SERVICES_BASIC } from "../../../../lib/constants";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Step2PriceProps {
     onNext: (data: { pricePerHour: number; services: string[] }) => void;
@@ -10,6 +11,7 @@ interface Step2PriceProps {
 }
 
 export default function Step2Price({ onNext, onBack, initialData }: Step2PriceProps) {
+  const { t } = useLanguage();
   const [price, setPrice] = useState(initialData.pricePerHour || 0);
   const [selectedServices, setSelectedServices] = useState<string[]>(initialData.services || []);
 
@@ -23,11 +25,11 @@ export default function Step2Price({ onNext, onBack, initialData }: Step2PricePr
 
   const handleContinue = () => {
     if (price <= 0) {
-      alert("Please set a valid hourly price.");
+      alert(t('cleanerSetup.step2.validPrice'));
       return;
     }
     if (selectedServices.length === 0) {
-      alert("Please select at least one service you offer.");
+      alert(t('cleanerSetup.step2.selectService'));
       return;
     }
     onNext({ pricePerHour: price, services: selectedServices });
@@ -35,14 +37,14 @@ export default function Step2Price({ onNext, onBack, initialData }: Step2PricePr
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Step 2: Set Your Price & Services</h2>
+      <h2 className="text-xl font-bold mb-4">{t('cleanerSetup.step2.title')}</h2>
 
       {/* Price Input */}
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Hourly Rate (€)</label>
+        <label className="block text-sm font-medium mb-2">{t('cleanerSetup.step2.hourlyRate')}</label>
         <input
           type="number"
-          placeholder="Price per hour (€)"
+          placeholder={t('cleanerSetup.step2.pricePlaceholder')}
           className="border p-2 rounded w-full"
           value={price}
           onChange={(e) => setPrice(Number(e.target.value))}
@@ -51,8 +53,8 @@ export default function Step2Price({ onNext, onBack, initialData }: Step2PricePr
 
       {/* Services Selection */}
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Services Offered</label>
-        <p className="text-xs text-gray-600 mb-3">Select all services you provide:</p>
+        <label className="block text-sm font-medium mb-2">{t('cleanerSetup.step2.servicesOffered')}</label>
+        <p className="text-xs text-gray-600 mb-3">{t('cleanerSetup.step2.selectAll')}</p>
         <div className="grid grid-cols-1 gap-2">
           {SERVICES_BASIC.map((service) => (
             <label
@@ -74,19 +76,19 @@ export default function Step2Price({ onNext, onBack, initialData }: Step2PricePr
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          {selectedServices.length} service{selectedServices.length !== 1 ? "s" : ""} selected
+          {selectedServices.length} {t('cleanerSetup.step2.servicesSelected')}
         </p>
       </div>
 
       <div className="flex justify-between">
         <button onClick={onBack} className="bg-gray-300 px-4 py-2 rounded">
-          Back
+          {t('common.back')}
         </button>
         <button
           onClick={handleContinue}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
         >
-          Continue
+          {t('common.continue')}
         </button>
       </div>
     </div>

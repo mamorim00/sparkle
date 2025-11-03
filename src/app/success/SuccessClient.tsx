@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../lib/firebase";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { useLanguage } from "../../context/LanguageContext";
 
 // Updated interface with start/end instead of time
 interface StripeSession {
@@ -40,6 +41,7 @@ interface Booking {
 }
 
 export default function SuccessClient() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [session, setSession] = useState<StripeSession | null>(null);
@@ -136,8 +138,8 @@ export default function SuccessClient() {
     return (
       <div className="max-w-xl mx-auto p-6 text-center">
         <div className="animate-pulse">
-          <h1 className="text-2xl font-bold text-gray-600 mb-4">Processing your booking...</h1>
-          <p className="mb-2">Please wait while we confirm your booking.</p>
+          <h1 className="text-2xl font-bold text-gray-600 mb-4">{t('success.processing')}</h1>
+          <p className="mb-2">{t('success.pleaseWait')}</p>
           <div className="mt-4 flex justify-center">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
@@ -147,24 +149,24 @@ export default function SuccessClient() {
   }
 
   if (!session) {
-    return <p className="text-center text-red-500">Could not retrieve session details.</p>;
+    return <p className="text-center text-red-500">{t('success.couldNotRetrieve')}</p>;
   }
 
   if (bookingError) {
     return (
       <div className="max-w-xl mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold text-green-600 mb-4">Payment Successful 🎉</h1>
+        <h1 className="text-2xl font-bold text-green-600 mb-4">{t('success.paymentSuccessful')} 🎉</h1>
         <p className="mb-2">
-          Thank you for your payment, <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
+          {t('success.thankYouPayment')} <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
         </p>
         <p className="mb-4 text-yellow-600">
           {bookingError}
         </p>
         <p className="mb-2">
-          We have received your payment of <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
+          {t('success.receivedPayment')} <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
         </p>
         <p className="mb-2">
-          A confirmation email will be sent to <b>{session.customer_details?.email}</b>.
+          {t('success.confirmationSent')} <b>{session.customer_details?.email}</b>.
         </p>
         {session.receipt_url && (
           <a
@@ -173,7 +175,7 @@ export default function SuccessClient() {
             rel="noopener noreferrer"
             className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
-            View Receipt
+            {t('success.viewReceipt')}
           </a>
         )}
       </div>
@@ -182,29 +184,29 @@ export default function SuccessClient() {
 
   return (
     <div className="max-w-xl mx-auto p-6 text-center">
-      <h1 className="text-2xl font-bold text-green-600 mb-4">Payment Successful 🎉</h1>
+      <h1 className="text-2xl font-bold text-green-600 mb-4">{t('success.paymentSuccessful')} 🎉</h1>
       <p className="mb-2">
-        Thank you for your booking, <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
+        {t('success.thankYouBooking')} <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
       </p>
       <p className="mb-2">
-        We have received your payment of <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
+        {t('success.receivedPayment')} <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
       </p>
 
       {booking && (
         <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-          <h2 className="text-xl font-semibold mb-3">Booking Details</h2>
+          <h2 className="text-xl font-semibold mb-3">{t('success.bookingDetails')}</h2>
           <div className="text-left space-y-2">
-            <p><strong>Cleaner:</strong> {booking.cleanerName}</p>
-            <p><strong>Service:</strong> {booking.cleaningType}</p>
-            <p><strong>Date:</strong> {booking.date}</p>
-            <p><strong>Time:</strong> {booking.start} - {booking.end}</p>
-            <p><strong>Status:</strong> <span className="text-green-600 font-semibold">{booking.status}</span></p>
+            <p><strong>{t('success.cleaner')}:</strong> {booking.cleanerName}</p>
+            <p><strong>{t('success.service')}:</strong> {booking.cleaningType}</p>
+            <p><strong>{t('success.date')}:</strong> {booking.date}</p>
+            <p><strong>{t('success.time')}:</strong> {booking.start} - {booking.end}</p>
+            <p><strong>{t('success.status')}:</strong> <span className="text-green-600 font-semibold">{booking.status}</span></p>
           </div>
         </div>
       )}
 
       <p className="mb-2 mt-4">
-        A confirmation has been sent to <b>{session.customer_details?.email}</b>.
+        {t('success.confirmationSent')} <b>{session.customer_details?.email}</b>.
       </p>
       {session.receipt_url && (
         <a
@@ -213,7 +215,7 @@ export default function SuccessClient() {
           rel="noopener noreferrer"
           className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
-          View Receipt
+          {t('success.viewReceipt')}
         </a>
       )}
     </div>

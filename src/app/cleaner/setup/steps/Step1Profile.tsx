@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app } from "@/lib/firebase";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Step1ProfileProps {
   onNext: (data: { username: string; name: string; photoUrl: string }) => void;
@@ -10,6 +11,7 @@ interface Step1ProfileProps {
 }
 
 export default function Step1Profile({ onNext, initialData }: Step1ProfileProps) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState(initialData.username || "");
   const [name, setName] = useState(initialData.name || "");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -17,7 +19,7 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
 
   const handleContinue = async () => {
     if (!username.trim() || !name.trim() || !photoFile) {
-      alert("Please provide a username, full name, and profile picture.");
+      alert(t('cleanerSetup.step1.fillAllFields'));
       return;
     }
 
@@ -33,17 +35,17 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Step 1: Your Profile</h2>
+      <h2 className="text-xl font-bold mb-4">{t('cleanerSetup.step1.title')}</h2>
       <input
         type="text"
-        placeholder="Full Name (e.g., John Smith)"
+        placeholder={t('cleanerSetup.step1.fullNamePlaceholder')}
         className="border p-2 rounded w-full mb-4"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <input
         type="text"
-        placeholder="Username (displayed on profile)"
+        placeholder={t('cleanerSetup.step1.usernamePlaceholder')}
         className="border p-2 rounded w-full mb-4"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
@@ -59,7 +61,7 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
         disabled={uploading}
         className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
       >
-        {uploading ? "Uploading..." : "Continue"}
+        {uploading ? t('cleanerSetup.step1.uploading') : t('cleanerSetup.step1.continue')}
       </button>
     </div>
   );

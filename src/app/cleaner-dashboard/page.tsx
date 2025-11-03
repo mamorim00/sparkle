@@ -16,6 +16,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface CleanerStats {
   pendingRequests: number;
@@ -26,6 +27,7 @@ interface CleanerStats {
 }
 
 export default function CleanerDashboard() {
+  const { t } = useLanguage();
   const [cleanerName, setCleanerName] = useState<string>("");
   const [stats, setStats] = useState<CleanerStats>({
     pendingRequests: 0,
@@ -109,7 +111,7 @@ export default function CleanerDashboard() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-lg mt-4 text-gray-600">Loading dashboard...</p>
+            <p className="text-lg mt-4 text-gray-600">{t('cleanerDashboard.loading')}</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -123,9 +125,9 @@ export default function CleanerDashboard() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, {cleanerName}!
+              {t('cleanerDashboard.welcome')}, {cleanerName}!
             </h1>
-            <p className="text-gray-600">Manage your bookings, schedule, and profile</p>
+            <p className="text-gray-600">{t('cleanerDashboard.subtitle')}</p>
 
             {/* Account Status Banner */}
             {stats.status === "pending" && (
@@ -133,9 +135,9 @@ export default function CleanerDashboard() {
                 <div className="flex items-center">
                   <AlertCircle className="w-5 h-5 text-yellow-600 mr-3" />
                   <div>
-                    <p className="text-sm font-semibold text-yellow-800">Account Pending Approval</p>
+                    <p className="text-sm font-semibold text-yellow-800">{t('cleanerDashboard.accountPending')}</p>
                     <p className="text-xs text-yellow-700 mt-1">
-                      Your account is under review. You will be able to receive bookings once approved by our team.
+                      {t('cleanerDashboard.accountPendingDescription')}
                     </p>
                   </div>
                 </div>
@@ -147,9 +149,9 @@ export default function CleanerDashboard() {
                 <div className="flex items-center">
                   <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
                   <div>
-                    <p className="text-sm font-semibold text-green-800">Account Active</p>
+                    <p className="text-sm font-semibold text-green-800">{t('cleanerDashboard.accountActive')}</p>
                     <p className="text-xs text-green-700 mt-1">
-                      Your account is approved and you can receive booking requests.
+                      {t('cleanerDashboard.accountActiveDescription')}
                     </p>
                   </div>
                 </div>
@@ -166,10 +168,10 @@ export default function CleanerDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Pending Requests</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('cleanerDashboard.pendingRequests')}</p>
                   <p className="text-3xl font-bold text-orange-600">{stats.pendingRequests}</p>
                   {stats.pendingRequests > 0 && (
-                    <p className="text-xs text-orange-600 mt-1 font-medium">Action Required</p>
+                    <p className="text-xs text-orange-600 mt-1 font-medium">{t('cleanerDashboard.actionRequired')}</p>
                   )}
                 </div>
                 <Bell className="w-10 h-10 text-orange-600 opacity-80" />
@@ -183,7 +185,7 @@ export default function CleanerDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Upcoming Bookings</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('cleanerDashboard.upcomingBookings')}</p>
                   <p className="text-3xl font-bold text-blue-600">{stats.upcomingBookings}</p>
                 </div>
                 <Calendar className="w-10 h-10 text-blue-600 opacity-80" />
@@ -194,7 +196,7 @@ export default function CleanerDashboard() {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Completed Jobs</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('cleanerDashboard.completedJobs')}</p>
                   <p className="text-3xl font-bold text-green-600">{stats.completedBookings}</p>
                 </div>
                 <CheckCircle className="w-10 h-10 text-green-600 opacity-80" />
@@ -208,7 +210,7 @@ export default function CleanerDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('cleanerDashboard.totalEarnings')}</p>
                   <p className="text-3xl font-bold text-green-600">€{stats.totalEarnings.toFixed(2)}</p>
                 </div>
                 <DollarSign className="w-10 h-10 text-green-600 opacity-80" />
@@ -228,16 +230,16 @@ export default function CleanerDashboard() {
                   <Bell className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Booking Requests</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.bookingRequests')}</h3>
                   {stats.pendingRequests > 0 && (
                     <span className="inline-block bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">
-                      {stats.pendingRequests} Pending
+                      {stats.pendingRequests} {t('cleanerDashboard.pending')}
                     </span>
                   )}
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                Review and respond to customer booking requests
+                {t('cleanerDashboard.bookingRequestsDescription')}
               </p>
             </Link>
 
@@ -251,11 +253,11 @@ export default function CleanerDashboard() {
                   <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">My Bookings</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.myBookings')}</h3>
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                View and manage your confirmed bookings
+                {t('cleanerDashboard.myBookingsDescription')}
               </p>
             </Link>
 
@@ -269,11 +271,11 @@ export default function CleanerDashboard() {
                   <Clock className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Availability & Profile</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.availabilityProfile')}</h3>
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                Update your schedule, services, and pricing
+                {t('cleanerDashboard.availabilityProfileDescription')}
               </p>
             </Link>
 
@@ -287,11 +289,11 @@ export default function CleanerDashboard() {
                   <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Earnings</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.earnings')}</h3>
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                Track your earnings and payout history
+                {t('cleanerDashboard.earningsDescription')}
               </p>
             </Link>
 
@@ -305,11 +307,11 @@ export default function CleanerDashboard() {
                   <TrendingUp className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">My Profile</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.myProfile')}</h3>
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                View your ratings, reviews, and profile
+                {t('cleanerDashboard.myProfileDescription')}
               </p>
             </Link>
 
@@ -323,11 +325,11 @@ export default function CleanerDashboard() {
                   <User className="w-6 h-6 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Support Center</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.supportCenter')}</h3>
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                Get help or report issues
+                {t('cleanerDashboard.supportCenterDescription')}
               </p>
             </Link>
           </div>
@@ -339,17 +341,17 @@ export default function CleanerDashboard() {
                 <AlertCircle className="w-6 h-6 text-orange-600 mr-3 mt-0.5" />
                 <div>
                   <h3 className="text-lg font-bold text-orange-900 mb-2">
-                    You have {stats.pendingRequests} pending booking request{stats.pendingRequests !== 1 ? "s" : ""}
+                    {t('cleanerDashboard.youHave')} {stats.pendingRequests} {t('cleanerDashboard.pendingBookingRequest')}{stats.pendingRequests !== 1 ? "s" : ""}
                   </h3>
                   <p className="text-sm text-orange-800 mb-4">
-                    Customers are waiting for your response. Please review and respond as soon as possible.
+                    {t('cleanerDashboard.customersWaiting')}
                   </p>
                   <Link
                     href="/cleaner/requests"
                     className="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm"
                   >
                     <Bell className="w-4 h-4" />
-                    View Requests
+                    {t('cleanerDashboard.viewRequests')}
                   </Link>
                 </div>
               </div>

@@ -19,8 +19,10 @@ import {
   Ban,
 } from "lucide-react";
 import { Booking } from "../../../types/booking";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function BookingDetailsPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const bookingId = params.bookingId as string;
 
@@ -45,7 +47,7 @@ export default function BookingDetailsPage() {
       const bookingSnap = await getDoc(bookingRef);
 
       if (!bookingSnap.exists()) {
-        setError("Booking not found");
+        setError(t('bookingDetails.notFound'));
         return;
       }
 
@@ -57,7 +59,7 @@ export default function BookingDetailsPage() {
       setBooking(bookingData);
     } catch (err) {
       console.error("Error fetching booking:", err);
-      setError("Failed to load booking details");
+      setError(t('bookingDetails.failedToLoad'));
     } finally {
       setLoading(false);
     }

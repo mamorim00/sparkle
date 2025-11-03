@@ -7,8 +7,10 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, DollarSign, User as UserIcon, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import type { Booking } from "../../../types/booking";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function CleanerRequestsPage() {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [pendingRequests, setPendingRequests] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,7 @@ export default function CleanerRequestsPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert("✅ Booking accepted! The customer has been notified.");
+        alert(`✅ ${t('cleanerRequests.bookingAccepted')}`);
         // Refresh the list
         await fetchPendingRequests(user.uid);
       } else {
@@ -86,7 +88,7 @@ export default function CleanerRequestsPage() {
       }
     } catch (error) {
       console.error("Error accepting booking:", error);
-      alert("❌ Failed to accept booking. Please try again.");
+      alert(`❌ ${t('cleanerRequests.failedToAccept')}`);
     } finally {
       setProcessingId(null);
     }
@@ -111,7 +113,7 @@ export default function CleanerRequestsPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert("✅ Booking rejected. The customer has been refunded.");
+        alert(`✅ ${t('cleanerRequests.bookingRejected')}`);
         setShowRejectModal(false);
         setRejectionReason("");
         setSelectedBooking(null);
@@ -122,7 +124,7 @@ export default function CleanerRequestsPage() {
       }
     } catch (error) {
       console.error("Error rejecting booking:", error);
-      alert("❌ Failed to reject booking. Please try again.");
+      alert(`❌ ${t('cleanerRequests.failedToReject')}`);
     } finally {
       setProcessingId(null);
     }
@@ -180,7 +182,7 @@ export default function CleanerRequestsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Loading pending requests...</p>
+          <p className="text-lg mt-4 text-gray-600">{t('cleanerRequests.loadingRequests')}</p>
         </div>
       </div>
     );
@@ -189,13 +191,13 @@ export default function CleanerRequestsPage() {
   if (!user) {
     return (
       <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-        <p className="text-gray-600 mb-6">You need to be logged in as a cleaner to view booking requests.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('cleanerRequests.pleaseLogIn')}</h2>
+        <p className="text-gray-600 mb-6">{t('cleanerRequests.needLoggedInCleaner')}</p>
         <Link
           href="/auth/login"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Go to Login
+          {t('cleanerRequests.goToLogin')}
         </Link>
       </div>
     );
@@ -206,8 +208,8 @@ export default function CleanerRequestsPage() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Booking Requests</h1>
-          <p className="text-gray-600">Review and respond to customer booking requests</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('cleanerRequests.title')}</h1>
+          <p className="text-gray-600">{t('cleanerRequests.subtitle')}</p>
         </div>
 
         {/* Stats */}
@@ -215,7 +217,7 @@ export default function CleanerRequestsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Pending Requests</p>
+                <p className="text-sm text-gray-600">{t('cleanerRequests.pendingRequests')}</p>
                 <p className="text-3xl font-bold text-orange-600">{pendingRequests.length}</p>
               </div>
               <AlertCircle className="w-10 h-10 text-orange-600" />
@@ -224,7 +226,7 @@ export default function CleanerRequestsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Urgent ({"<"}2h)</p>
+                <p className="text-sm text-gray-600">{t('cleanerRequests.urgent')}</p>
                 <p className="text-3xl font-bold text-red-600">
                   {pendingRequests.filter((r) => isUrgent(r.requestExpiresAt)).length}
                 </p>
@@ -235,7 +237,7 @@ export default function CleanerRequestsPage() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Potential Earnings</p>
+                <p className="text-sm text-gray-600">{t('cleanerRequests.potentialEarnings')}</p>
                 <p className="text-3xl font-bold text-green-600">
                   €{pendingRequests.reduce((sum, r) => sum + (r.cleanerAmount || 0), 0).toFixed(2)}
                 </p>
@@ -263,15 +265,15 @@ export default function CleanerRequestsPage() {
                   {/* Status and Time Badges */}
                   <div className="flex items-center flex-wrap gap-2 mb-4">
                     <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold border border-orange-300">
-                      ⏳ Awaiting Response
+                      ⏳ {t('cleanerRequests.awaitingResponse')}
                     </span>
                     {urgent ? (
                       <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold border border-red-300 animate-pulse">
-                        🚨 URGENT - Expires in {timeRemaining}
+                        🚨 {t('cleanerRequests.urgentExpiresIn')} {timeRemaining}
                       </span>
                     ) : (
                       <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold border border-blue-300">
-                        ⏰ Expires in {timeRemaining}
+                        ⏰ {t('cleanerRequests.expiresIn')} {timeRemaining}
                       </span>
                     )}
                   </div>
@@ -283,22 +285,22 @@ export default function CleanerRequestsPage() {
                   <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-green-700 mb-1 font-medium">💰 Your Earnings:</p>
+                        <p className="text-sm text-green-700 mb-1 font-medium">💰 {t('cleanerRequests.yourEarnings')}</p>
                         <p className="text-3xl font-bold text-green-600">
                           €{(request.cleanerAmount || request.amount * 0.85).toFixed(2)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-600 mb-1">Total Amount</p>
+                        <p className="text-xs text-gray-600 mb-1">{t('cleanerRequests.totalAmount')}</p>
                         <p className="text-lg font-semibold text-gray-700">€{request.amount.toFixed(2)}</p>
-                        <p className="text-xs text-gray-500">{request.duration}h service</p>
+                        <p className="text-xs text-gray-500">{request.duration}h {t('common.service')}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Customer Information */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Customer Details:</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">{t('cleanerRequests.customerDetails')}</p>
                     <div className="space-y-2">
                       <p className="text-gray-900 flex items-center gap-2">
                         <UserIcon className="w-4 h-4 text-gray-600" />
@@ -333,7 +335,7 @@ export default function CleanerRequestsPage() {
                       className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       <CheckCircle className="w-5 h-5" />
-                      {isProcessing ? "Processing..." : "Accept Booking"}
+                      {isProcessing ? t('cleanerRequests.processing') : t('cleanerRequests.acceptBooking')}
                     </button>
                     <button
                       onClick={() => openRejectModal(request)}
@@ -341,14 +343,14 @@ export default function CleanerRequestsPage() {
                       className="flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       <XCircle className="w-5 h-5" />
-                      {isProcessing ? "Processing..." : "Reject"}
+                      {isProcessing ? t('cleanerRequests.processing') : t('cleanerRequests.reject')}
                     </button>
                   </div>
 
                   {/* Footer */}
                   <div className="pt-4 mt-4 border-t border-gray-200 text-xs text-gray-500">
-                    <p>Request ID: {request.id.slice(0, 8)}...</p>
-                    <p>Received: {new Date(request.createdAt).toLocaleString()}</p>
+                    <p>{t('cleanerRequests.requestId')}: {request.id.slice(0, 8)}...</p>
+                    <p>{t('cleanerRequests.received')} {new Date(request.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
               );
@@ -358,15 +360,15 @@ export default function CleanerRequestsPage() {
           /* Empty State */
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Pending Requests</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('cleanerRequests.noPendingRequests')}</h3>
             <p className="text-gray-600 mb-6">
-              You are all caught up! New booking requests will appear here.
+              {t('cleanerRequests.allCaughtUp')}
             </p>
             <Link
               href="/cleaner/bookings"
               className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
             >
-              View My Bookings
+              {t('cleanerRequests.viewMyBookings')}
             </Link>
           </div>
         )}
@@ -374,10 +376,10 @@ export default function CleanerRequestsPage() {
         {/* Navigation */}
         <div className="mt-8 flex justify-between items-center">
           <Link href="/cleaner-dashboard" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to Dashboard
+            ← {t('cleanerRequests.backToDashboard')}
           </Link>
           <Link href="/cleaner/bookings" className="text-blue-600 hover:text-blue-700 font-medium">
-            View Confirmed Bookings →
+            {t('cleanerRequests.viewConfirmedBookings')} →
           </Link>
         </div>
       </div>
@@ -386,15 +388,15 @@ export default function CleanerRequestsPage() {
       {showRejectModal && selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Reject Booking Request?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('cleanerRequests.rejectBookingQuestion')}</h2>
             <p className="text-gray-600 mb-4">
-              The customer will be refunded and notified. You can optionally provide a reason:
+              {t('cleanerRequests.customerRefunded')}
             </p>
 
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="e.g., Not available at this time, schedule conflict..."
+              placeholder={t('cleanerRequests.reasonPlaceholder')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
               rows={4}
             />
@@ -405,14 +407,14 @@ export default function CleanerRequestsPage() {
                 disabled={processingId !== null}
                 className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleReject}
                 disabled={processingId !== null}
                 className="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:bg-gray-400"
               >
-                {processingId ? "Rejecting..." : "Confirm Rejection"}
+                {processingId ? t('cleanerRequests.rejecting') : t('cleanerRequests.confirmRejection')}
               </button>
             </div>
           </div>
