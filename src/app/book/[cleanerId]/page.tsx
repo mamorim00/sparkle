@@ -321,7 +321,7 @@ export default function BookPage() {
              </p>
           ) : (
              <p className="text-sm text-red-500 font-bold mt-1">
-                 {t('bookCleaner.noAvailability', { days: MAX_SEARCH_DAYS })}
+                 {t('bookPage.noAvailability')} {MAX_SEARCH_DAYS} {t('bookPage.days')}
              </p>
           )}
         </div>
@@ -367,7 +367,7 @@ export default function BookPage() {
       {/* Message if no slots are found */}
       {days.length === 0 && searchOffset >= MAX_SEARCH_DAYS && (
           <div className="text-center py-4 text-gray-500">
-              {t('bookCleaner.noSlotsFound', { days: MAX_SEARCH_DAYS })}
+              {t('bookPage.noSlotsFound')} {MAX_SEARCH_DAYS} {t('bookPage.days')}
           </div>
       )}
 

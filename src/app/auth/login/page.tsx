@@ -15,10 +15,8 @@ import {
   ConfirmationResult,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { useLanguage } from "../../../context/LanguageContext";
 
 export default function AuthPage() {
-  const { t } = useLanguage();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
