@@ -7,6 +7,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { Calendar, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Booking {
   id: string;
@@ -23,6 +24,7 @@ interface Booking {
 }
 
 export default function RescheduleBookingPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const bookingId = params.bookingId as string;
@@ -58,13 +60,13 @@ export default function RescheduleBookingPage() {
         const data = { id: bookingSnap.id, ...bookingSnap.data() } as Booking;
 
         if (data.userId !== userId) {
-          alert("You don't have access to this booking");
+          alert(t('reschedule.noAccess'));
           router.push("/");
           return;
         }
 
         if (data.status !== "confirmed") {
-          alert("Only confirmed bookings can be rescheduled");
+          alert(t('reschedule.onlyConfirmed'));
           router.push(`/booking/${bookingId}`);
           return;
         }
@@ -73,12 +75,12 @@ export default function RescheduleBookingPage() {
         setNewDate(data.date);
         setNewStart(data.start);
       } else {
-        alert("Booking not found");
+        alert(t('reschedule.notFound'));
         router.push("/");
       }
     } catch (error) {
       console.error("Error fetching booking:", error);
-      alert("Failed to load booking");
+      alert(t('reschedule.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ export default function RescheduleBookingPage() {
 
   const handleReschedule = async () => {
     if (!booking || !user || !newDate || !newStart) {
-      alert("Please select both date and time");
+      alert(t('reschedule.selectDateTime'));
       return;
     }
 
@@ -115,7 +117,7 @@ export default function RescheduleBookingPage() {
     const hoursUntilBooking = (newDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     if (hoursUntilBooking < 24) {
-      alert("New booking time must be at least 24 hours from now");
+      alert(t('reschedule.must24Hours'));
       return;
     }
 
@@ -138,15 +140,15 @@ export default function RescheduleBookingPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Booking rescheduled successfully!");
+        alert(t('reschedule.success'));
         router.push(`/booking/${bookingId}`);
       } else {
-        alert(`Failed to reschedule booking: ${data.message || "Unknown error"}`);
+        alert(`${t('reschedule.failed')}: ${data.message || t('reschedule.unknownError')}`);
         setSaving(false);
       }
     } catch (error) {
       console.error("Error rescheduling booking:", error);
-      alert("Failed to reschedule booking. Please try again.");
+      alert(t('reschedule.failedTryAgain'));
       setSaving(false);
     }
   };
@@ -156,7 +158,7 @@ export default function RescheduleBookingPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">Loading...</p>
+          <p className="text-lg mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -165,12 +167,12 @@ export default function RescheduleBookingPage() {
   if (!user || !booking) {
     return (
       <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Not Found</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('reschedule.notFoundTitle')}</h2>
         <Link
           href="/"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Go to Home
+          {t('reschedule.goToHome')}
         </Link>
       </div>
     );
@@ -186,15 +188,15 @@ export default function RescheduleBookingPage() {
         {/* Header */}
         <div className="mb-6">
           <Link href={`/booking/${bookingId}`} className="text-blue-600 hover:text-blue-700 font-medium mb-4 inline-block">
-            ← Back to Booking Details
+            ← {t('reschedule.backToDetails')}
           </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Reschedule Booking</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('reschedule.title')}</h1>
           <p className="text-gray-600">{booking.cleaningType} with {booking.cleanerName}</p>
         </div>
 
         {/* Current Booking Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-3">Current Booking</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">{t('reschedule.currentBooking')}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-blue-800">
               <Calendar className="w-4 h-4" />
@@ -209,13 +211,13 @@ export default function RescheduleBookingPage() {
 
         {/* Rescheduling Form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Select New Date & Time</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('reschedule.selectNewDateTime')}</h3>
 
           <div className="space-y-6">
             {/* Date Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Date
+                {t('reschedule.newDate')}
               </label>
               <input
                 type="date"
@@ -229,17 +231,17 @@ export default function RescheduleBookingPage() {
             {/* Time Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Start Time
+                {t('reschedule.newStartTime')}
               </label>
               <select
                 value={newStart}
                 onChange={(e) => setNewStart(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900"
               >
-                <option value="">Select time...</option>
+                <option value="">{t('reschedule.selectTime')}</option>
                 {generateTimeSlots().map((slot) => (
                   <option key={slot} value={slot}>
-                    {slot} - {calculateEndTime(slot, booking.duration)} ({booking.duration}h service)
+                    {slot} - {calculateEndTime(slot, booking.duration)} ({booking.duration}h {t('common.service')})
                   </option>
                 ))}
               </select>
@@ -250,11 +252,11 @@ export default function RescheduleBookingPage() {
               <div className="flex gap-2">
                 <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-yellow-800">
-                  <p className="font-semibold mb-1">Rescheduling Policy</p>
+                  <p className="font-semibold mb-1">{t('reschedule.reschedulingPolicy')}</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>New booking time must be at least 24 hours from now</li>
-                    <li>Subject to cleaner availability</li>
-                    <li>The cleaner will be notified of the change</li>
+                    <li>{t('reschedule.must24HoursPolicy')}</li>
+                    <li>{t('reschedule.subjectToAvailability')}</li>
+                    <li>{t('reschedule.cleanerNotified')}</li>
                   </ul>
                 </div>
               </div>
@@ -266,7 +268,7 @@ export default function RescheduleBookingPage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-green-900 mb-1">New Booking Time</p>
+                    <p className="font-semibold text-green-900 mb-1">{t('reschedule.newBookingTime')}</p>
                     <p className="text-green-800">
                       {new Date(newDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                     </p>
@@ -284,14 +286,14 @@ export default function RescheduleBookingPage() {
                 href={`/booking/${bookingId}`}
                 className="flex-1 bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center"
               >
-                Cancel
+                {t('reschedule.cancelBtn')}
               </Link>
               <button
                 onClick={handleReschedule}
                 disabled={!newDate || !newStart || saving}
                 className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                {saving ? "Saving..." : "Confirm Reschedule"}
+                {saving ? t('reschedule.saving') : t('reschedule.confirmReschedule')}
               </button>
             </div>
           </div>

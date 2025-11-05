@@ -3,41 +3,14 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Timestamp } from "firebase/firestore";
-
-// --- Helper Function for Formatting Time ---
-const formatAvailability = (date: Date) => {
-  const now = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(now.getDate() + 1);
-
-  const timeOptions: Intl.DateTimeFormatOptions = {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  };
-
-  const isToday = now.toDateString() === date.toDateString();
-  const isTomorrow = tomorrow.toDateString() === date.toDateString();
-
-  const timePart = date.toLocaleTimeString(undefined, timeOptions);
-
-  if (isToday) return `Today at ${timePart}`;
-  if (isTomorrow) return `Tomorrow at ${timePart}`;
-
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  };
-  const datePart = date.toLocaleDateString(undefined, dateOptions);
-  return `${datePart} at ${timePart}`;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 interface CleanerCardProps {
   id: string;
   name: string;
   photoUrl: string;
   rating?: number;
+  reviewCount?: number;
   location: string;
   pricePerHour: number;
   verified?: boolean;
@@ -51,6 +24,7 @@ export default function CleanerCard({
   name,
   photoUrl,
   rating = 0,
+  reviewCount = 0,
   location,
   pricePerHour,
   verified = true,
@@ -59,6 +33,37 @@ export default function CleanerCard({
   selectedDuration,
 }: CleanerCardProps) {
   const router = useRouter();
+  const { t, language } = useLanguage();
+
+  // --- Helper Function for Formatting Time ---
+  const formatAvailability = (date: Date) => {
+    const now = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+
+    const locale = language === 'fi' ? 'fi-FI' : 'en-US';
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: language === 'en',
+    };
+
+    const isToday = now.toDateString() === date.toDateString();
+    const isTomorrow = tomorrow.toDateString() === date.toDateString();
+
+    const timePart = date.toLocaleTimeString(locale, timeOptions);
+
+    if (isToday) return `${t('cleanerCard.today')} ${timePart}`;
+    if (isTomorrow) return `${t('cleanerCard.tomorrow')} ${timePart}`;
+
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    };
+    const datePart = date.toLocaleDateString(locale, dateOptions);
+    return `${datePart} ${timePart}`;
+  };
 
   const handleBookNow = () => {
     router.push(`/book/${id}?duration=${selectedDuration}`);
@@ -77,9 +82,14 @@ export default function CleanerCard({
     selectedDuration === 6 ? parseDate(nextAvailable6h) :
     null;
 
-  const formattedTime = nextAvailableDate ? formatAvailability(nextAvailableDate) : "Not available soon";
+  // Check if the next available time is in the past
+  const now = new Date();
+  const isInPast = nextAvailableDate && nextAvailableDate.getTime() <= now.getTime();
 
-  const renderStars = (rating: number) => {
+  // If time is in the past, treat as not available
+  const formattedTime = (nextAvailableDate && !isInPast) ? formatAvailability(nextAvailableDate) : t('cleanerCard.notAvailableSoon');
+
+  const renderStars = (rating: number, reviewCount: number) => {
     const fullStars = Math.floor(rating);
     const halfStar = rating - fullStars >= 0.5;
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
@@ -89,7 +99,14 @@ export default function CleanerCard({
         {Array(fullStars).fill(0).map((_, i) => <span key={`full-${i}`} className="text-amber-400">★</span>)}
         {halfStar && <span className="text-amber-400">☆</span>}
         {Array(emptyStars).fill(0).map((_, i) => <span key={`empty-${i}`} className="text-gray-300">★</span>)}
-        <span className="ml-1.5 text-gray-600 text-sm font-medium">{rating.toFixed(1)}</span>
+        <span className="ml-1.5 text-gray-600 text-sm font-medium">
+          {rating > 0 ? rating.toFixed(1) : t('cleanerCard.noReviewsYet')}
+        </span>
+        {reviewCount > 0 && (
+          <span className="ml-1 text-gray-500 text-xs">
+            ({reviewCount} {reviewCount === 1 ? t('cleanerCard.review') : t('cleanerCard.reviews')})
+          </span>
+        )}
       </div>
     );
   };
@@ -119,7 +136,7 @@ export default function CleanerCard({
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                Verified
+                {t('cleanerCard.verified')}
               </span>
             )}
           </div>
@@ -134,17 +151,17 @@ export default function CleanerCard({
           </p>
 
           {/* Rating */}
-          <div>{renderStars(rating)}</div>
+          <div>{renderStars(rating, reviewCount)}</div>
 
           {/* Price */}
-          <p className="text-xl font-bold text-gray-900">{pricePerHour}€<span className="text-sm font-normal text-gray-500">/hour</span></p>
+          <p className="text-xl font-bold text-gray-900">{pricePerHour}€<span className="text-sm font-normal text-gray-500">/{t('cleanerCard.hour')}</span></p>
 
           {/* Availability */}
           <div className="pt-3 border-t border-gray-200">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Next Available
+              {t('cleanerCard.nextAvailable')}
             </p>
-            <p className={`text-sm font-semibold ${nextAvailableDate ? 'text-green-600' : 'text-gray-400'}`}>
+            <p className={`text-sm font-semibold ${(nextAvailableDate && !isInPast) ? 'text-green-600' : 'text-gray-400'}`}>
               {formattedTime}
             </p>
           </div>
@@ -155,7 +172,7 @@ export default function CleanerCard({
           onClick={handleBookNow}
           className="mt-4 w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors duration-200 font-semibold text-sm"
         >
-          Book Now
+          {t('cleanerCard.bookNow')}
         </button>
       </div>
     </div>

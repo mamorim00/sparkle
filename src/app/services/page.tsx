@@ -2,60 +2,62 @@
 
 import Link from "next/link";
 import { Sparkles, Home, Building2, Clock, CheckCircle } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function ServicesPage() {
+  const { t } = useLanguage();
   const services = [
     {
       icon: <Home className="w-12 h-12 text-blue-600" />,
-      title: "Standard House Cleaning",
-      description: "Regular cleaning to keep your home fresh and tidy",
+      title: t('servicesPage.standardCleaning'),
+      description: t('servicesPage.standardDesc'),
       features: [
-        "Dusting all surfaces",
-        "Vacuuming & mopping floors",
-        "Kitchen & bathroom cleaning",
-        "Trash removal",
+        t('servicesPage.dustingSurfaces'),
+        t('servicesPage.vacuumingMopping'),
+        t('servicesPage.kitchenBathroom'),
+        t('servicesPage.trashRemoval'),
       ],
-      duration: "2-4 hours",
-      price: "From €50",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Sparkles className="w-12 h-12 text-blue-600" />,
-      title: "Deep Cleaning",
-      description: "Thorough top-to-bottom cleaning for your entire home",
+      title: t('servicesPage.deepCleaning'),
+      description: t('servicesPage.deepCleaningDesc'),
       features: [
-        "Everything in standard cleaning",
-        "Inside appliances (oven, fridge)",
-        "Baseboards & window sills",
-        "Behind furniture",
+        t('servicesPage.standardPlus'),
+        t('servicesPage.insideAppliances'),
+        t('servicesPage.baseboards'),
+        t('servicesPage.behindFurniture'),
       ],
-      duration: "4-8 hours",
-      price: "From €120",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Building2 className="w-12 h-12 text-blue-600" />,
-      title: "Move-In / Move-Out",
-      description: "Complete cleaning for transitions",
+      title: t('servicesPage.moveInOut'),
+      description: t('servicesPage.moveInOutDesc'),
       features: [
-        "All rooms deep cleaned",
-        "Inside all cabinets & closets",
-        "Window cleaning (inside)",
-        "Detailed bathroom & kitchen",
+        t('servicesPage.allRoomsDeep'),
+        t('servicesPage.insideCabinets'),
+        t('servicesPage.windowCleaning'),
+        t('servicesPage.detailedBathKitchen'),
       ],
-      duration: "5-10 hours",
-      price: "From €150",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Clock className="w-12 h-12 text-blue-600" />,
-      title: "Recurring Cleaning",
-      description: "Regular scheduled cleaning service",
+      title: t('servicesPage.recurringCleaning'),
+      description: t('servicesPage.recurringDesc'),
       features: [
-        "Weekly, bi-weekly, or monthly",
-        "Same cleaner each visit",
-        "Customizable cleaning checklist",
-        "Discounted rates",
+        t('servicesPage.weeklyBiweekly'),
+        t('servicesPage.sameCleaner'),
+        t('servicesPage.customChecklist'),
+        t('servicesPage.discountedRates'),
       ],
-      duration: "2-4 hours",
-      price: "From €45/visit",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
   ];
 
@@ -64,15 +66,15 @@ export default function ServicesPage() {
       {/* Hero */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 px-6 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold mb-6">Our Services</h1>
+          <h1 className="text-5xl font-bold mb-6">{t('servicesPage.title')}</h1>
           <p className="text-xl mb-8">
-            Professional cleaning services tailored to your needs
+            {t('servicesPage.subtitle')}
           </p>
           <Link
             href="/cleaners"
             className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 hover:shadow-xl transition-all shadow-lg"
           >
-            Book a Cleaner Now
+            {t('servicesPage.bookCleanerNow')}
           </Link>
         </div>
       </section>
@@ -81,10 +83,10 @@ export default function ServicesPage() {
       <section className="max-w-7xl mx-auto py-16 px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            What We Offer
+            {t('servicesPage.whatWeOffer')}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            From routine maintenance to deep cleans, we&apos;ve got you covered
+            {t('servicesPage.coverageDesc')}
           </p>
         </div>
 
@@ -102,7 +104,7 @@ export default function ServicesPage() {
 
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-3">
-                  What&apos;s Included:
+                  {t('servicesPage.whatsIncluded')}
                 </h4>
                 <ul className="space-y-2">
                   {service.features.map((feature, idx) => (
@@ -119,13 +121,13 @@ export default function ServicesPage() {
 
               <div className="flex justify-between items-center pt-6 border-t border-gray-200">
                 <div>
-                  <p className="text-sm text-gray-600">Duration</p>
+                  <p className="text-sm text-gray-600">{t('servicesPage.duration')}</p>
                   <p className="font-semibold text-gray-900">
                     {service.duration}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Starting at</p>
+                  <p className="text-sm text-gray-600">{t('servicesPage.startingAt')}</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {service.price}
                   </p>
@@ -140,34 +142,34 @@ export default function ServicesPage() {
       <section className="bg-white py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-            How It Works
+            {t('servicesPage.howItWorks')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Choose Your Service</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.chooseService')}</h3>
               <p className="text-gray-600">
-                Select the cleaning service that fits your needs
+                {t('servicesPage.chooseServiceDesc')}
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Book & Pay</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.bookPay')}</h3>
               <p className="text-gray-600">
-                Pick a time slot and complete secure payment
+                {t('servicesPage.bookPayDesc')}
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Relax</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.relax')}</h3>
               <p className="text-gray-600">
-                Your trusted cleaner arrives and makes your space sparkle
+                {t('servicesPage.relaxDesc')}
               </p>
             </div>
           </div>
@@ -177,22 +179,22 @@ export default function ServicesPage() {
       {/* CTA */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 px-6 text-center">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <h2 className="text-3xl font-bold mb-4">{t('servicesPage.readyToStart')}</h2>
           <p className="text-xl mb-8">
-            Book a trusted cleaner in just a few clicks
+            {t('servicesPage.bookInClicks')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/cleaners"
               className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 hover:shadow-xl transition-all shadow-lg"
             >
-              Browse Cleaners
+              {t('servicesPage.browseCleaners')}
             </Link>
             <Link
               href="/contact"
               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-all"
             >
-              Contact Us
+              {t('servicesPage.contactUs')}
             </Link>
           </div>
         </div>

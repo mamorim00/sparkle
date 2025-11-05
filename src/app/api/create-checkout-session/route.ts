@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const platformFeeAmount = Math.round(totalAmount * 100 * PLATFORM_FEE_PERCENTAGE);
     const cleanerAmount = Math.round(totalAmount * 100 * (1 - PLATFORM_FEE_PERCENTAGE));
 
-    // Build session config
+    // Build session config with manual capture (payment hold for cleaner acceptance)
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -75,6 +75,13 @@ export async function POST(req: NextRequest) {
       success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/`,
       customer_email: userEmail || undefined,
+      payment_intent_data: {
+        capture_method: "manual", // Hold payment until cleaner accepts
+        metadata: {
+          needsCleanerAcceptance: "true",
+          cleanerId: bookingDetails.cleanerId,
+        },
+      },
       metadata: {
         userId: userId || null,
         guestName: userName,
@@ -88,6 +95,7 @@ export async function POST(req: NextRequest) {
         cleaningType: bookingDetails.cleaningType,
         platformFee: (platformFeeAmount / 100).toString(),
         cleanerAmount: (cleanerAmount / 100).toString(),
+        needsCleanerAcceptance: "true", // Flag for webhook processing
       },
     };
 
@@ -95,11 +103,13 @@ export async function POST(req: NextRequest) {
       customer_email: sessionConfig.customer_email,
       metadata_guestEmail: sessionConfig.metadata?.guestEmail,
       metadata_guestName: sessionConfig.metadata?.guestName,
+      capture_method: "manual",
     });
 
-    // If cleaner has Stripe Connect, use destination charges
+    // If cleaner has Stripe Connect, update payment_intent_data with destination charges
     if (cleanerStripeAccountId) {
       sessionConfig.payment_intent_data = {
+        ...sessionConfig.payment_intent_data, // Keep manual capture settings
         application_fee_amount: platformFeeAmount,
         transfer_data: {
           destination: cleanerStripeAccountId,

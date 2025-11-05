@@ -2,9 +2,9 @@
 
 **Project**: Sparkle Cleaning Marketplace
 **Type**: Two-sided marketplace connecting customers with professional cleaners
-**Status**: MVP (55% Complete - Production Ready Requires Additional Features)
+**Status**: Advanced MVP (75% Complete - Near Production Ready)
 **Tech Stack**: Next.js 15, Firebase, Stripe
-**Last Updated**: October 2025
+**Last Updated**: October 14, 2025
 
 ---
 
@@ -63,6 +63,9 @@
 - **Multi-Mode Login**: Login, Register, or Guest checkout
 - **Password Visibility Toggle**: User-friendly password input
 - **Auto-Login After Registration**: Seamless registration flow
+- **Password Reset**: "Forgot Password" functionality on login page
+  - Sends password reset email via Firebase Auth
+  - User-friendly error and success messages
 
 ### 1.2 Cleaner Features
 
@@ -96,8 +99,15 @@
 #### Cleaner Dashboard
 - **Schedule Editor**: Manage weekly availability and exceptions
 - **Profile Management**: View and edit cleaner profile
-- **Earnings Page**: Placeholder for earnings tracking (not yet connected to actual data)
-- **Bookings Page**: View upcoming and past bookings (implementation exists)
+- **Earnings Dashboard**: View earnings by booking (working)
+  - Shows earnings per job
+  - Total earnings summary
+  - Filters by upcoming, completed, cancelled
+- **Bookings Page**: View upcoming and past bookings (FULLY IMPLEMENTED)
+  - Three tabs: Upcoming, Completed, Cancelled
+  - "Today's Job" highlighting
+  - Customer contact information (email/phone quick actions)
+  - Booking details with earnings per job
 
 #### Approval System
 - **Pending Status**: New cleaners start as "pending"
@@ -234,30 +244,43 @@
   - 15% platform fee to main account
 - **Guest Checkout**: Supports payments without Stripe customer account
 
-### 1.6 Email Notifications
+### 1.6 Email Notifications ✅ RECENTLY IMPLEMENTED
 
 #### Implemented (via Resend)
 - **Booking Confirmation to Customer**:
-  - Styled HTML email with gradient header
-  - Booking details card
+  - Styled HTML email with gradient header (purple/blue theme)
+  - Booking details card with all information
   - Service info, date, time, duration
   - Total amount paid
   - Booking ID for reference
-  - What to expect section
+  - "What to expect" section with bullet points
+  - Support contact information
 
 - **Booking Confirmation to Cleaner**:
-  - Green-themed HTML email
-  - Job details card
-  - Customer name and contact email
-  - Service, date, time, duration
-  - Earnings amount
-  - Preparation checklist
+  - Green-themed HTML email (professional look)
+  - Job details card with customer information
+  - Customer name and contact email for communication
+  - Service type, date, time, duration
+  - Earnings amount prominently displayed
+  - "Before the job" preparation checklist
+  - Booking ID for reference
 
-#### Email Delivery
+- **Review Request Emails** (Automated):
+  - Sent daily via scheduled Cloud Function
+  - Token-based review submission (no login required)
+  - Sent 1 day after service completion
+
+#### Email Delivery & Reliability
 - **Provider**: Resend (resend.com)
 - **Sender**: bookings@resend.dev (can be customized to verified domain)
-- **Triggered by**: Cloud Function on new booking creation
+- **Triggered by**: Cloud Function on new booking creation (`sendBookingConfirmationEmails`)
 - **Error Handling**: Promise.allSettled to ensure both emails attempt sending
+- **Guest Email Fix**: Emails now use actual guest email from checkout form
+  - Stores `guestEmail` in Stripe metadata
+  - Reliable fallback mechanism
+  - Fixed operator precedence bug in webhook
+- **Logging**: Console logs for debugging email flow
+  - Tracks email through checkout → Stripe → webhook → confirmation
 
 ---
 
@@ -265,25 +288,36 @@
 
 ### 2.1 Critical Missing Features (Must Have for Production)
 
-#### Booking Management (HIGH PRIORITY)
-**Problem**: Customers and cleaners can't view their bookings effectively
-- Fix customer booking list (currently queries wrong collection)
-  - Current: Queries `users.reservations` array
-  - Fix: Query `bookings` collection by `userId`
-- Create booking details page (/booking/[bookingId])
+#### Booking Management ✅ MOSTLY COMPLETE
+**Status**: Core functionality implemented, notifications still needed
+
+**✅ Implemented**:
+- Customer booking list (FIXED - queries `bookings` collection correctly)
+  - Displays all user bookings with full details
+  - Sorted by date, status filtering
+- Cleaner booking list (WORKING)
+  - Three tabs: Upcoming, Completed, Cancelled
+  - Shows customer contact info
+  - Displays earnings per job
+- Booking details page (/booking/[bookingId]) (WORKING)
   - View full booking information
   - Booking status tracking
-  - Contact information
-- Add booking cancellation functionality
+  - Customer/cleaner contact information
+  - Cancel and reschedule options
+- Booking cancellation functionality (WORKING)
   - Cancel button on booking details page
-  - Cancellation policy enforcement (e.g., 24h notice)
-  - Automatic refund calculation
-  - Stripe refund API integration
-- Add booking rescheduling option
-  - Select new date/time
-  - Update booking document
-  - Trigger availability recalculation
-  - Send notification emails
+  - Cancellation policy enforcement (100% refund >24h, 50% <24h)
+  - Automatic refund calculation based on time until service
+  - Stripe refund API integration (working)
+  - Booking status update to "cancelled"
+- Booking rescheduling (WORKING)
+  - Select new date/time with availability validation
+  - Updates booking document
+  - Triggers availability recalculation via Cloud Function
+  - Validates new time slot is available
+
+**⚠️ Still Missing**:
+- Cancellation/rescheduling notification emails (customer + cleaner)
 
 #### Stripe Webhook (CRITICAL)
 **Problem**: Bookings created on client-side success page (unreliable)
@@ -296,8 +330,13 @@
 - Move booking creation from SuccessClient to webhook
 - Add idempotency to prevent duplicate bookings
 
-#### Enhanced Notifications (HIGH PRIORITY)
-**Missing Email Types**:
+#### Enhanced Notifications ✅ PARTIALLY COMPLETE
+**✅ Implemented**:
+- Booking confirmation emails (customer + cleaner)
+- Review request emails (automated, token-based)
+- Guest email handling (fixed via Stripe metadata)
+
+**⚠️ Still Missing**:
 - Booking reminder (24h before service)
   - Scheduled Cloud Function runs daily at 10:00 AM
   - Query bookings for tomorrow
@@ -308,7 +347,9 @@
 - Cleaner approval/rejection emails
   - Admin approves: welcome email with next steps
   - Admin rejects: reason and reapplication instructions
-- Payment receipts
+- Rescheduling notifications
+  - Notify both parties when booking is rescheduled
+- Payment receipts (optional)
   - Detailed invoice email after booking
   - Include payment method, platform fee breakdown
 
@@ -1384,51 +1425,52 @@ interface Booking {
 
 ### 7.1 Critical Issues
 
-#### Booking Creation Reliability (CRITICAL)
-- **Issue**: Bookings created on client-side after payment redirect
-- **Risk**: If user closes browser before success page loads, booking is lost
-- **Impact**: Payment received but no booking in system
-- **Solution Required**: Implement Stripe webhook to create bookings server-side
-- **Priority**: HIGH
+#### Booking Creation Reliability (PARTIAL - NEEDS TESTING)
+- **Status**: Webhook exists but reliability untested
+- **Issue**: Bookings created on both client-side and webhook (redundancy for safety)
+- **Current**: Success page creates booking + webhook also creates booking
+- **Risk**: Potential duplicate bookings (though session ID used as document ID)
+- **Solution Required**: Test webhook reliability, potentially remove client-side creation
+- **Priority**: MEDIUM (working but needs optimization)
 
-#### Customer Booking List Broken
-- **Issue**: Queries wrong collection (`users.reservations` instead of `bookings`)
-- **Impact**: Customers can't view their bookings
+#### ~~Customer Booking List Broken~~ ✅ FIXED
+- **Status**: RESOLVED
+- **Fixed**: Now queries `bookings` collection correctly
+- **Implementation**: Queries by `userId`, ordered by date
 - **File**: `/src/app/user/bookings/page.tsx`
-- **Solution**: Change query to:
-```typescript
-const bookings = await getDocs(
-  query(collection(db, "bookings"),
-  where("userId", "==", currentUser.uid),
-  orderBy("date", "desc"))
-);
-```
-- **Priority**: HIGH
+- **Working**: Customers can now view all their bookings
 
 ### 7.2 Missing Core Features
 
-#### No Booking Cancellation
-- **Issue**: Users can't cancel bookings
-- **Impact**: Poor user experience, requires manual intervention
-- **Requires**:
+#### ~~No Booking Cancellation~~ ✅ IMPLEMENTED
+- **Status**: COMPLETE
+- **Implemented**:
   - Cancellation UI (button on booking details page)
-  - Cancellation policy (e.g., 24h notice)
-  - Stripe refund API integration
-  - Email notifications
-- **Priority**: HIGH
+  - Cancellation policy (100% refund >24h, 50% refund <24h)
+  - Stripe refund API integration (working)
+  - Booking status updates
+  - Refund tracking in Firestore
+- **File**: `/src/app/api/bookings/cancel/route.ts`
+- **Still Missing**: Email notifications for cancellations
 
-#### No Booking Management for Cleaners
-- **Issue**: Cleaners can't see their upcoming jobs
-- **Impact**: Cleaners don't know what jobs they have
-- **File Exists**: `/src/app/cleaner/bookings/page.tsx`
-- **Status**: Implementation incomplete
-- **Priority**: CRITICAL
+#### ~~No Booking Management for Cleaners~~ ✅ IMPLEMENTED
+- **Status**: FULLY WORKING
+- **Implemented**:
+  - Cleaner bookings list with three tabs
+  - Upcoming jobs with "Today's Job" highlighting
+  - Completed jobs history
+  - Cancelled bookings tracking
+  - Customer contact information
+  - Earnings display per booking
+- **File**: `/src/app/cleaner/bookings/page.tsx`
 
-#### No Webhook Implementation
-- **Issue**: No server-side payment confirmation
-- **Impact**: Unreliable booking creation
-- **Missing**: `/src/app/api/webhooks/stripe/route.ts`
-- **Priority**: CRITICAL
+#### ~~No Webhook Implementation~~ ✅ PARTIALLY IMPLEMENTED
+- **Status**: EXISTS but needs thorough testing
+- **Implemented**: `/src/app/api/webhooks/stripe/route.ts`
+- **Handles**: `checkout.session.completed` event
+- **Features**: Signature verification, booking creation
+- **Note**: Currently redundant with client-side creation for safety
+- **Priority**: Test reliability and optimize
 
 ### 7.3 User Experience Issues
 
@@ -1438,11 +1480,20 @@ const bookings = await getDocs(
 - **Solution Needed**: Larger touch targets, better spacing
 - **Priority**: MEDIUM
 
-#### No Booking Details Page
-- **Issue**: Can't view individual booking details
-- **Impact**: Users can't see full booking information
-- **Missing**: `/src/app/booking/[bookingId]/page.tsx`
-- **Priority**: HIGH
+#### ~~No Booking Details Page~~ ✅ IMPLEMENTED
+- **Status**: WORKING
+- **Implemented**: `/src/app/booking/[bookingId]/page.tsx`
+- **Features**:
+  - View full booking information
+  - Cancel booking button
+  - Reschedule booking button
+  - Customer/cleaner contact information
+  - Booking status display
+  - Refund information (if cancelled)
+- **Additional Page**: `/src/app/booking/[bookingId]/reschedule/page.tsx`
+  - Select new date/time
+  - Availability validation
+  - Updates booking and triggers recalculation
 
 #### Navigation Menu on Mobile
 - **Issue**: No hamburger menu, all links in header
@@ -1538,33 +1589,38 @@ const bookings = await getDocs(
 
 ### 7.8 Feature Gaps Summary
 
-#### Missing Customer Features
-- Booking cancellation
-- Booking rescheduling
-- View booking details
-- Rate & review cleaners (display reviews)
-- Favorite cleaners
-- Booking history
+#### ~~Missing~~ Customer Features → ✅ MOSTLY COMPLETE
+- ✅ Booking cancellation (DONE)
+- ✅ Booking rescheduling (DONE)
+- ✅ View booking details (DONE)
+- ✅ Booking history (DONE)
+- ⚠️ Rate & review cleaners (submission works, display missing)
+- ❌ Favorite cleaners
+- ❌ Booking notes/special instructions
 
-#### Missing Cleaner Features
-- View bookings list (broken)
-- Mark job as complete
-- Earnings dashboard (real data)
-- Payout history
-- Customer messages
+#### ~~Missing~~ Cleaner Features → ✅ MOSTLY COMPLETE
+- ✅ View bookings list (WORKING)
+- ✅ Earnings dashboard (WORKING - shows real data)
+- ❌ Mark job as complete (auto-handled by status)
+- ❌ Payout history (Stripe Connect needed)
+- ❌ Customer messaging system
 
-#### Missing Admin Features
-- Analytics dashboard
-- User management
-- Financial reporting
-- Dispute resolution
-- Service management
+#### Missing Admin Features → ⚠️ BASIC ONLY
+- ✅ Cleaner approval system (WORKING)
+- ❌ Analytics dashboard
+- ❌ User management
+- ❌ Financial reporting
+- ❌ Dispute resolution
+- ❌ Service management
 
-#### Missing Notifications
-- Booking reminders (24h before)
-- Cancellation emails
-- Cleaner approval/rejection emails
-- Payment receipt emails
+#### ~~Missing~~ Notifications → ✅ PARTIALLY COMPLETE
+- ✅ Booking confirmation emails (DONE)
+- ✅ Review request emails (DONE)
+- ❌ Booking reminders (24h before)
+- ❌ Cancellation emails
+- ❌ Rescheduling emails
+- ❌ Cleaner approval/rejection emails
+- ❌ Payment receipt emails (optional)
 
 ---
 
@@ -1687,26 +1743,44 @@ For questions about this codebase, refer to:
 
 ## Summary
 
-**Sparkle** is a two-sided marketplace MVP connecting customers with professional cleaners. The app is ~55% complete with a solid foundation: working booking flow, Stripe payments, Firebase backend, cleaner onboarding, and admin approval system.
+**Sparkle** is a two-sided marketplace connecting customers with professional cleaners. The app is now **75% complete** with substantial recent progress on core booking management and email systems.
 
 **Key Strengths**:
-- Real-time availability calculation
-- Multi-step cleaner onboarding
-- Stripe Connect integration
-- Professional design system
-- Type-safe with TypeScript
+- ✅ Complete booking management (view, cancel, reschedule)
+- ✅ Real-time availability calculation
+- ✅ Automated email notifications (confirmations, reviews)
+- ✅ Multi-step cleaner onboarding
+- ✅ Stripe Connect integration
+- ✅ Professional design system with polished UI
+- ✅ Type-safe with TypeScript
+- ✅ Password reset functionality
+- ✅ Help Center with FAQs
 
-**Critical Gaps**:
-- Booking management (view, cancel, reschedule)
-- Cleaner bookings list
-- Stripe webhook for reliable booking creation
-- Email notifications (reminders, cancellations)
-- Review display
+**Recent Major Progress** (Last 2 Weeks):
+- ✅ Fixed customer booking list
+- ✅ Implemented cleaner bookings dashboard
+- ✅ Added booking cancellation with Stripe refunds
+- ✅ Added booking rescheduling with validation
+- ✅ Implemented booking confirmation emails
+- ✅ Fixed guest email handling (Stripe metadata)
+- ✅ Added password reset
+- ✅ Created Help Center page
+- ✅ Comprehensive testing checklist
 
-**Next Steps**: Focus on Phase 1 quick wins from FEATURE_GAPS.md to reach production readiness (estimated 2-3 weeks).
+**Remaining Critical Gaps**:
+- ❌ Booking reminder emails (24h before service)
+- ❌ Cancellation/rescheduling notification emails
+- ⚠️ Review display on cleaner profiles (submission works)
+- ⚠️ Stripe webhook testing and optimization
+- ❌ Enhanced cleaner profile pages
+- ❌ Advanced search filters
+
+**Next Steps**: Focus on remaining notification emails and review display to reach production readiness (estimated 1-2 weeks).
+
+**Production Readiness**: 75% complete → 85-90% needed for confident launch
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: October 9, 2025
+**Document Version**: 2.0
+**Last Updated**: October 14, 2025
 **Maintained By**: Development Team

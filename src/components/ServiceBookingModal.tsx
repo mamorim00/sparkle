@@ -6,6 +6,7 @@ import { collection, getDocs, query, where, Timestamp } from "firebase/firestore
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Cleaner {
   id: string;
@@ -38,6 +39,7 @@ export default function ServiceBookingModal({
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -90,7 +92,7 @@ export default function ServiceBookingModal({
   }, [isOpen, location, serviceDuration, serviceId]);
 
   const formatAvailability = (timestamp: Timestamp | null | undefined) => {
-    if (!timestamp) return "Not available";
+    if (!timestamp) return t('serviceBookingModal.notAvailable');
 
     const date = timestamp.toDate();
     const today = new Date();
@@ -102,15 +104,16 @@ export default function ServiceBookingModal({
     const comparisonDate = new Date(date);
     comparisonDate.setHours(0, 0, 0, 0);
 
-    const timeOptions: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true };
+    const locale = language === 'fi' ? 'fi-FI' : 'en-US';
+    const timeOptions: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: language === 'en' };
 
     if (comparisonDate.getTime() === today.getTime()) {
-      return `Today at ${date.toLocaleTimeString([], timeOptions)}`;
+      return `${t('serviceBookingModal.today')} ${date.toLocaleTimeString(locale, timeOptions)}`;
     } else if (comparisonDate.getTime() === tomorrow.getTime()) {
-      return `Tomorrow at ${date.toLocaleTimeString([], timeOptions)}`;
+      return `${t('serviceBookingModal.tomorrow')} ${date.toLocaleTimeString(locale, timeOptions)}`;
     } else {
       const dateOptions: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric" };
-      return `${date.toLocaleDateString([], dateOptions)} at ${date.toLocaleTimeString([], timeOptions)}`;
+      return `${date.toLocaleDateString(locale, dateOptions)} ${date.toLocaleTimeString(locale, timeOptions)}`;
     }
   };
 

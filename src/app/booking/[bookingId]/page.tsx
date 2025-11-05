@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { auth, db } from "../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -19,8 +19,10 @@ import {
   Ban,
 } from "lucide-react";
 import { Booking } from "../../../types/booking";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function BookingDetailsPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const bookingId = params.bookingId as string;
 
@@ -28,10 +30,12 @@ export default function BookingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async () => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       // Allow viewing booking details with or without auth
+      setCurrentUserId(user?.uid || null);
       await fetchBooking();
     });
     return () => unsubscribe();
@@ -45,7 +49,7 @@ export default function BookingDetailsPage() {
       const bookingSnap = await getDoc(bookingRef);
 
       if (!bookingSnap.exists()) {
-        setError("Booking not found");
+        setError(t('bookingDetails.notFound'));
         return;
       }
 
@@ -57,7 +61,7 @@ export default function BookingDetailsPage() {
       setBooking(bookingData);
     } catch (err) {
       console.error("Error fetching booking:", err);
-      setError("Failed to load booking details");
+      setError(t('bookingDetails.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -90,6 +94,18 @@ export default function BookingDetailsPage() {
     if (!booking || booking.status !== "confirmed") return false;
     const serviceDate = new Date(booking.date);
     return serviceDate > new Date();
+  };
+
+  const isCleanerView = () => {
+    return booking && currentUserId && booking.cleanerId === currentUserId;
+  };
+
+  const getBackLink = () => {
+    return isCleanerView() ? "/cleaner/bookings" : "/user/bookings";
+  };
+
+  const getBackText = () => {
+    return isCleanerView() ? "Back to My Jobs" : "Back to My Bookings";
   };
 
   const handleCancel = async () => {
@@ -135,7 +151,12 @@ export default function BookingDetailsPage() {
   const getStatusBadge = () => {
     if (!booking) return null;
 
-    const statusConfig = {
+    const statusConfig: Record<string, { icon: React.JSX.Element; color: string; label: string }> = {
+      pending_acceptance: {
+        icon: <AlertCircle className="w-5 h-5" />,
+        color: "bg-orange-100 text-orange-800 border-orange-200",
+        label: "Awaiting Cleaner Confirmation",
+      },
       confirmed: {
         icon: <CheckCircle className="w-5 h-5" />,
         color: "bg-green-100 text-green-800 border-green-200",
@@ -151,9 +172,19 @@ export default function BookingDetailsPage() {
         color: "bg-gray-100 text-gray-800 border-gray-200",
         label: "Completed",
       },
+      rejected: {
+        icon: <XCircle className="w-5 h-5" />,
+        color: "bg-red-100 text-red-800 border-red-200",
+        label: "Rejected by Cleaner",
+      },
+      expired: {
+        icon: <AlertCircle className="w-5 h-5" />,
+        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+        label: "Request Expired",
+      },
     };
 
-    const config = statusConfig[booking.status];
+    const config = statusConfig[booking.status] || statusConfig.confirmed;
 
     return (
       <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${config.color}`}>
@@ -181,10 +212,10 @@ export default function BookingDetailsPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Not Found</h2>
         <p className="text-gray-600 mb-6">{error || "This booking does not exist or you don't have permission to view it."}</p>
         <Link
-          href="/user/bookings"
+          href={getBackLink()}
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
         >
-          Back to My Bookings
+          {getBackText()}
         </Link>
       </div>
     );
@@ -198,11 +229,11 @@ export default function BookingDetailsPage() {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          href="/user/bookings"
+          href={getBackLink()}
           className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to My Bookings
+          {getBackText()}
         </Link>
 
         {/* Header */}
@@ -329,8 +360,8 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
-        {/* Actions */}
-        {booking.status === "confirmed" && (
+        {/* Actions - Only show for customers, not cleaners */}
+        {booking.status === "confirmed" && !isCleanerView() && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Actions</h2>
             <div className="flex flex-col sm:flex-row gap-4">

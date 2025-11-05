@@ -132,7 +132,30 @@ async function createBookingFromSession(session: Stripe.Checkout.Session) {
       ? parseFloat(metadata.cleanerAmount)
       : amount * 0.85;
 
-    // Create booking document
+    // Calculate request expiration time
+    // Expires in 24 hours OR 6 hours before service (whichever comes first)
+    const now = new Date();
+    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const serviceDateTime = new Date(`${metadata.date}T${metadata.start}`);
+    const sixHoursBeforeService = new Date(serviceDateTime.getTime() - 6 * 60 * 60 * 1000);
+
+    const requestExpiresAt = twentyFourHoursFromNow < sixHoursBeforeService
+      ? twentyFourHoursFromNow.toISOString()
+      : sixHoursBeforeService.toISOString();
+
+    console.log("⏰ Request expiration calculation:", {
+      now: now.toISOString(),
+      twentyFourHours: twentyFourHoursFromNow.toISOString(),
+      sixHoursBeforeService: sixHoursBeforeService.toISOString(),
+      expiresAt: requestExpiresAt,
+    });
+
+    // Get payment intent ID for later capture
+    const paymentIntentId = typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+
+    // Create booking document with pending_acceptance status
     const bookingData = {
       id: session.id,
       userId: metadata.userId || null,
@@ -150,10 +173,13 @@ async function createBookingFromSession(session: Stripe.Checkout.Session) {
       platformFee: platformFee,
       cleanerAmount: cleanerAmount,
       currency: session.currency || "eur",
-      status: "confirmed",
+      status: "pending_acceptance", // Awaiting cleaner acceptance
       payoutStatus: "pending",
       createdAt: new Date().toISOString(),
       createdVia: "webhook", // Track that this was created by webhook
+      requestExpiresAt: requestExpiresAt,
+      paymentIntentId: paymentIntentId,
+      paymentCaptured: false, // Payment is authorized but not captured
     };
 
     await bookingRef.set(bookingData);

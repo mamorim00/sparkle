@@ -6,11 +6,15 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stripe:check": "node scripts/check-stripe-setup.js",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "stripe:trigger": "stripe trigger checkout.session.completed"
   },
   "dependencies": {
     "@next/font": "^14.2.15",
     "autoprefixer": "^10.4.21",
+    "claude": "^0.1.1",
     "firebase": "^12.3.0",
     "firebase-functions": "^6.4.0",
     "lucide-react": "^0.544.0",

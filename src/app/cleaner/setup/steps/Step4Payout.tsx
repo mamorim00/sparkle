@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Step4PayoutProps {
   onNext: (data: { stripeConnected: boolean }) => void;
@@ -9,6 +10,7 @@ interface Step4PayoutProps {
 }
 
 export default function Step4Payout({ onNext, onBack, initialData }: Step4PayoutProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [accountCreated, setAccountCreated] = useState(false);
@@ -30,7 +32,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
       });
 
       if (!createAccountRes.ok) {
-        throw new Error("Failed to create Stripe account");
+        throw new Error(t('cleanerSetup.step4.failedCreateAccount'));
       }
 
       const { accountId } = await createAccountRes.json();
@@ -44,7 +46,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
       });
 
       if (!onboardingRes.ok) {
-        throw new Error("Failed to create onboarding link");
+        throw new Error(t('cleanerSetup.step4.failedOnboardingLink'));
       }
 
       const { url } = await onboardingRes.json();
@@ -53,7 +55,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
       window.location.href = url;
     } catch (err) {
       console.error("Error connecting Stripe:", err);
-      setError(err instanceof Error ? err.message : "Failed to connect Stripe");
+      setError(err instanceof Error ? err.message : t('cleanerSetup.step4.failedConnectStripe'));
       setLoading(false);
     }
   };
@@ -64,37 +66,36 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Step 4: Payment Setup</h2>
+      <h2 className="text-2xl font-bold mb-4">{t('cleanerSetup.step4.title')}</h2>
       <p className="text-gray-600 mb-6">
-        Connect your bank account to receive payments. You&apos;ll earn 85% of each booking (we keep a 15% service fee).
+        {t('cleanerSetup.step4.description')}
       </p>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <h3 className="font-semibold text-lg mb-3">💰 How Payments Work</h3>
+        <h3 className="font-semibold text-lg mb-3">{t('cleanerSetup.step4.howPaymentsWork')}</h3>
         <ul className="space-y-2 text-sm">
           <li className="flex items-start gap-2">
             <span className="text-green-600 font-bold">✓</span>
-            <span>You receive <strong>85%</strong> of each booking amount</span>
+            <span>{t('cleanerSetup.step4.receive85')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-600 font-bold">✓</span>
-            <span>Automatic payouts after job completion</span>
+            <span>{t('cleanerSetup.step4.automaticPayouts')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-600 font-bold">✓</span>
-            <span>Secure payments via Stripe</span>
+            <span>{t('cleanerSetup.step4.securePayments')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-600 font-bold">✓</span>
-            <span>Track your earnings in your dashboard</span>
+            <span>{t('cleanerSetup.step4.trackEarnings')}</span>
           </li>
         </ul>
       </div>
 
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
         <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> You&apos;ll be redirected to Stripe to securely connect your bank account.
-          This takes about 2-3 minutes.
+          <strong>{t('cleanerSetup.step4.note')}:</strong> {t('cleanerSetup.step4.redirectNote')}
         </p>
       </div>
 
@@ -107,7 +108,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
       {accountCreated && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-green-800">
-            ✓ Stripe account created! Redirecting to complete onboarding...
+            ✓ {t('cleanerSetup.step4.accountCreated')}
           </p>
         </div>
       )}
@@ -121,10 +122,10 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              Setting up Stripe...
+              {t('cleanerSetup.step4.settingUpStripe')}
             </>
           ) : (
-            <>Connect Bank Account</>
+            <>{t('cleanerSetup.step4.connectBankAccount')}</>
           )}
         </button>
 
@@ -133,7 +134,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
           disabled={loading}
           className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed"
         >
-          Skip for Now (Setup Later)
+          {t('cleanerSetup.step4.skipForNow')}
         </button>
 
         <button
@@ -141,7 +142,7 @@ export default function Step4Payout({ onNext, onBack, initialData }: Step4Payout
           disabled={loading}
           className="text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed"
         >
-          ← Back
+          ← {t('common.back')}
         </button>
       </div>
     </div>

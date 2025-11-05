@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Poppins } from "next/font/google";
 import { LocationProvider } from "../context/LocationContext";
+import { LanguageProvider } from "../context/LanguageContext";
 
 const inter = Poppins({ 
   subsets: ["latin"],
@@ -21,13 +22,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.className}>
       <body>
-        <LocationProvider>
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-        </LocationProvider>
+        <LanguageProvider>
+          <LocationProvider>
+            <Navbar />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </LocationProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
