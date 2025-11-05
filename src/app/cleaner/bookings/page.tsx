@@ -38,6 +38,11 @@ export default function CleanerBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("requests");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -93,11 +98,13 @@ export default function CleanerBookingsPage() {
   };
 
   const isToday = (dateString: string) => {
+    if (!mounted) return false; // Don't show "today" badge during SSR
     const today = new Date().toISOString().split("T")[0];
     return dateString === today;
   };
 
   const getTimeUntil = (dateString: string, startTime: string) => {
+    if (!mounted) return null; // Don't show time until during SSR
     const bookingDateTime = new Date(`${dateString}T${startTime}`);
     const now = new Date();
     const diff = bookingDateTime.getTime() - now.getTime();
@@ -138,7 +145,8 @@ export default function CleanerBookingsPage() {
   };
 
   // Categorize bookings
-  const now = new Date();
+  // Use a stable "now" value to prevent hydration issues
+  const now = mounted ? new Date() : new Date(0);
 
   // Pending requests awaiting acceptance
   const pendingRequests = bookings.filter((b) => b.status === "pending_acceptance")
@@ -149,11 +157,13 @@ export default function CleanerBookingsPage() {
     });
 
   const upcomingBookings = bookings.filter((b) => {
+    if (!mounted) return b.status === "confirmed"; // Before mount, show all confirmed
     const bookingDate = new Date(`${b.date}T${b.start}`);
     return bookingDate > now && b.status === "confirmed";
   }).sort((a, b) => new Date(`${a.date}T${a.start}`).getTime() - new Date(`${b.date}T${b.start}`).getTime());
 
   const completedBookings = bookings.filter((b) => {
+    if (!mounted) return b.status === "completed"; // Before mount, show only completed status
     const bookingDate = new Date(`${b.date}T${b.start}`);
     return bookingDate <= now || b.status === "completed";
   }).sort((a, b) => new Date(`${b.date}T${b.start}`).getTime() - new Date(`${a.date}T${a.start}`).getTime());
@@ -163,12 +173,12 @@ export default function CleanerBookingsPage() {
 
   // Calculate earnings
   const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.cleanerAmount || b.amount * 0.85), 0);
-  const thisWeekEarnings = completedBookings.filter((b) => {
+  const thisWeekEarnings = mounted ? completedBookings.filter((b) => {
     const bookingDate = new Date(b.date);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     return bookingDate >= weekAgo;
-  }).reduce((sum, b) => sum + (b.cleanerAmount || b.amount * 0.85), 0);
+  }).reduce((sum, b) => sum + (b.cleanerAmount || b.amount * 0.85), 0) : 0;
 
   // Get active bookings based on tab
   const displayBookings = activeTab === "requests" ? pendingRequests
@@ -318,7 +328,7 @@ export default function CleanerBookingsPage() {
                   {/* Status and Time Badges */}
                   <div className="flex items-center flex-wrap gap-2 mb-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(booking.status)}`}>
-                      {getStatusIcon(booking.status)} {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      {getStatusIcon(booking.status)} {booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : 'Unknown'}
                     </span>
                     {todayBooking && (
                       <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold border border-yellow-300">

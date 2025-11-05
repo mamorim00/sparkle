@@ -10,17 +10,18 @@ module.exports = {
         // Professional slate grays
         primary: '#f8fafc',         // slate-50 - ultra light background
         'primary-light': '#f1f5f9', // slate-100 - card backgrounds
-        'primary-dark': '#334155',  // slate-700 - dark headings
+        'primary-dark': '#0f172a',  // slate-900 - dark headings (deeper)
 
+        // Professional blue palette (more sophisticated)
+        accent: '#0B68B3',          // blue-600 - primary button background (deeper blue)
+        'accent-dark': '#1e40af',   // blue-800 - hover background
+        'accent-light': '#3b82f6',  // blue-500 - lighter accents
+        'accent-50': '#eff6ff',     // blue-50 - very light backgrounds
+        'accent-100': '#dbeafe',
+        'accent-footer': '#BCDCF5',   // blue-100 - light backgrounds
 
-            accent: '#3b82f6',        // blue-500 - primary button background
-      'accent-dark': '#1e40af',  // blue-800 - hover background (darker for contrast)
-      'accent-light': '#60a5fa', // blue-400 - lighter accents
-
-
-        
         // Supporting colors
-        highlight: '#fbbf24',       // amber-400 - warm CTAs/badges
+        highlight: '#f59e0b',       // amber-500 - warm CTAs/badges
         neutral: '#1e293b',         // slate-800 - body text
         'neutral-light': '#64748b', // slate-500 - secondary text
       },

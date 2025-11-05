@@ -40,9 +40,9 @@ export default function ContactPage() {
       {/* Hero */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 px-6 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold mb-6">{t('contact.title')}</h1>
+          <h1 className="text-5xl font-bold mb-6">{t('contactPage.title')}</h1>
           <p className="text-xl">
-            {t('contact.subtitle')}
+            {t('contactPage.subtitle')}
           </p>
         </div>
       </section>
@@ -54,8 +54,8 @@ export default function ContactPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-blue-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('contact.emailUs')}</h3>
-            <p className="text-gray-600 mb-2">{t('contact.emailDesc')}</p>
+            <h3 className="text-xl font-semibold mb-2">{t('contactPage.emailUs')}</h3>
+            <p className="text-gray-600 mb-2">{t('contactPage.forGeneralInquiries')}</p>
             <a
               href="mailto:hello@sparkle.example"
               className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-all"
@@ -68,8 +68,8 @@ export default function ContactPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Phone className="w-8 h-8 text-blue-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('contact.callUs')}</h3>
-            <p className="text-gray-600 mb-2">{t('contact.callHours')}</p>
+            <h3 className="text-xl font-semibold mb-2">{t('contactPage.callUs')}</h3>
+            <p className="text-gray-600 mb-2">{t('contactPage.businessHours')}</p>
             <a
               href="tel:+1234567890"
               className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-all"
@@ -82,11 +82,11 @@ export default function ContactPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <MapPin className="w-8 h-8 text-blue-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('contact.visitUs')}</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('contactPage.visitUs')}</h3>
             <p className="text-gray-600">
-              123 Sparkle Street
+              {t('contactPage.address')}
               <br />
-              Helsinki, Finland
+              {t('contactPage.city')}
             </p>
           </div>
         </div>
@@ -95,20 +95,20 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-              {t('contact.formTitle')}
+              {t('contactPage.sendMessage')}
             </h2>
             <p className="text-gray-600 mb-8 text-center">
-              {t('contact.formSubtitle')}
+              {t('contactPage.getBackWithin24')}
             </p>
 
             {submitted ? (
               <div className="bg-green-50 border-2 border-green-200 rounded-lg p-8 text-center">
                 <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-green-900 mb-2">
-                  {t('contact.messageSent')}
+                  {t('contactPage.messageSent')}
                 </h3>
                 <p className="text-green-700">
-                  {t('contact.thankYou')}
+                  {t('contactPage.thankYouMessage')}
                 </p>
               </div>
             ) : (
@@ -119,7 +119,7 @@ export default function ContactPage() {
                       htmlFor="name"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      {t('contact.fullName')} *
+                      {t('checkoutPage.fullName')} *
                     </label>
                     <input
                       type="text"
@@ -138,7 +138,7 @@ export default function ContactPage() {
                       htmlFor="email"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      {t('contact.emailAddress')} *
+                      {t('checkoutPage.emailAddress')} *
                     </label>
                     <input
                       type="email"
@@ -159,7 +159,7 @@ export default function ContactPage() {
                       htmlFor="phone"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      {t('contact.phoneNumber')}
+                      {t('checkoutPage.phoneNumber')}
                     </label>
                     <input
                       type="tel"
@@ -177,7 +177,7 @@ export default function ContactPage() {
                       htmlFor="subject"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      {t('contact.subject')} *
+                      {t('contactPage.subject')} *
                     </label>
                     <select
                       id="subject"
@@ -187,12 +187,12 @@ export default function ContactPage() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                     >
-                      <option value="">{t('contact.selectSubject')}</option>
-                      <option value="general">{t('contact.generalInquiry')}</option>
-                      <option value="booking">{t('contact.bookingQuestion')}</option>
-                      <option value="cleaner">{t('contact.becomeCleaner')}</option>
-                      <option value="support">{t('contact.technicalSupport')}</option>
-                      <option value="other">{t('contact.other')}</option>
+                      <option value="">{t('contactPage.selectSubject')}</option>
+                      <option value="general">{t('contactPage.generalInquiry')}</option>
+                      <option value="booking">{t('contactPage.bookingQuestion')}</option>
+                      <option value="cleaner">{t('contactPage.becomeACleaner')}</option>
+                      <option value="support">{t('contactPage.technicalSupport')}</option>
+                      <option value="other">{t('contactPage.other')}</option>
                     </select>
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export default function ContactPage() {
                     htmlFor="message"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    {t('contact.yourMessage')} *
+                    {t('contactPage.yourMessage')} *
                   </label>
                   <textarea
                     id="message"
@@ -212,7 +212,7 @@ export default function ContactPage() {
                     required
                     rows={6}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
-                    placeholder={t('contact.messagePlaceholder')}
+                    placeholder={t('contactPage.messagePlaceholder')}
                   ></textarea>
                 </div>
 
@@ -221,7 +221,7 @@ export default function ContactPage() {
                   className="w-full bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 hover:shadow-xl transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Send className="w-5 h-5" />
-                  {t('contact.sendMessage')}
+                  {t('contactPage.sendMessageBtn')}
                 </button>
               </form>
             )}
@@ -233,16 +233,16 @@ export default function ContactPage() {
       <section className="bg-blue-50 py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {t('contact.quickAnswers')}
+            {t('contactPage.lookingForQuickAnswers')}
           </h2>
           <p className="text-gray-600 mb-6">
-            {t('contact.checkHelpCenter')}
+            {t('contactPage.checkHelpCenter')}
           </p>
           <Link
             href="/help"
             className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 hover:shadow-xl transition-all shadow-lg"
           >
-            {t('contact.visitHelpCenter')}
+            {t('contactPage.visitHelpCenter')}
           </Link>
         </div>
       </section>

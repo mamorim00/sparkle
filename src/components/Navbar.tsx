@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { useLocation } from "../context/LocationContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ChevronDown, Calendar, LifeBuoy, LogOut, User as UserIcon, Briefcase, Bell } from "lucide-react";
 
 export default function Navbar() {
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   const { location, setLocation } = useLocation();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -24,33 +26,35 @@ export default function Navbar() {
 
         // Fetch user role from Firestore
         try {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDoc = await getDoc(userDocRef);
+          // First check if user is a cleaner by checking cleaners collection
+          const cleanerDocRef = doc(db, "cleaners", currentUser.uid);
+          const cleanerDoc = await getDoc(cleanerDocRef);
 
-          if (userDoc.exists()) {
-            const role = userDoc.data().role || "customer";
-            setUserRole(role);
+          if (cleanerDoc.exists()) {
+            // User is a cleaner
+            setUserRole("cleaner");
 
-            // If cleaner, fetch cleaner profile and pending requests count
-            if (role === "cleaner") {
-              const cleanerDocRef = doc(db, "cleaners", currentUser.uid);
-              const cleanerDoc = await getDoc(cleanerDocRef);
+            // Update user object with cleaner info
+            const cleanerData = cleanerDoc.data();
+            const updatedUser = {
+              ...currentUser,
+              displayName: cleanerData.username || currentUser.displayName,
+              email: cleanerData.email || currentUser.email,
+            } as User;
+            setUser(updatedUser);
 
-              if (cleanerDoc.exists()) {
-                // Update user object with cleaner info
-                const cleanerData = cleanerDoc.data();
-                const updatedUser = {
-                  ...currentUser,
-                  displayName: cleanerData.username || currentUser.displayName,
-                  email: cleanerData.email || currentUser.email,
-                } as User;
-                setUser(updatedUser);
-              }
-
-              fetchPendingRequestsCount(currentUser.uid);
-            }
+            fetchPendingRequestsCount(currentUser.uid);
           } else {
-            setUserRole("customer");
+            // Not a cleaner, check users collection for role
+            const userDocRef = doc(db, "users", currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+              const role = userDoc.data().role || "customer";
+              setUserRole(role);
+            } else {
+              setUserRole("customer");
+            }
           }
         } catch (error) {
           console.error("Error fetching user role:", error);
@@ -155,7 +159,7 @@ export default function Navbar() {
                         {user.email || user.phoneNumber}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 capitalize">
-                        {userRole === "cleaner" ? "Cleaner Account" : "Customer Account"}
+                        {userRole === "cleaner" ? t('navbar.cleanerAccount') : t('navbar.customerAccount')}
                       </p>
                     </div>
 
@@ -168,7 +172,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <Calendar className="w-4 h-4 text-gray-600" />
-                          My Bookings
+                          {t('navbar.myBookings')}
                         </Link>
                         <Link
                           href="/support"
@@ -176,7 +180,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <LifeBuoy className="w-4 h-4 text-gray-600" />
-                          Support Center
+                          {t('navbar.supportCenter')}
                         </Link>
                       </>
                     )}
@@ -190,7 +194,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <Briefcase className="w-4 h-4 text-gray-600" />
-                          Dashboard
+                          {t('navbar.dashboard')}
                         </Link>
                         <Link
                           href="/cleaner/requests"
@@ -198,7 +202,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <Bell className="w-4 h-4 text-gray-600" />
-                          <span>Booking Requests</span>
+                          <span>{t('navbar.bookingRequests')}</span>
                           {pendingRequestsCount > 0 && (
                             <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
                               {pendingRequestsCount}
@@ -211,7 +215,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <LifeBuoy className="w-4 h-4 text-gray-600" />
-                          Support Center
+                          {t('navbar.supportCenter')}
                         </Link>
                       </>
                     )}
@@ -225,7 +229,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <Briefcase className="w-4 h-4 text-gray-600" />
-                          Admin Dashboard
+                          {t('navbar.adminDashboard')}
                         </Link>
                         <Link
                           href="/support"
@@ -233,7 +237,7 @@ export default function Navbar() {
                           onClick={closeUserMenu}
                         >
                           <LifeBuoy className="w-4 h-4 text-gray-600" />
-                          Support Center
+                          {t('navbar.supportCenter')}
                         </Link>
                       </>
                     )}
@@ -245,7 +249,7 @@ export default function Navbar() {
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        Logout
+                        {t('navbar.logout')}
                       </button>
                     </div>
                   </div>
@@ -257,7 +261,7 @@ export default function Navbar() {
               href="/auth/login"
               className="bg-primary-light text-neutral px-4 py-2 rounded hover:bg-primary transition"
             >
-              Login
+              {t('navbar.login')}
             </Link>
           )}
         </div>
@@ -267,7 +271,7 @@ export default function Navbar() {
       {showLocationPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-primary-light rounded-xl p-6 w-80 shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Select Location</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{t('navbar.selectLocation')}</h2>
             <ul className="space-y-2">
               <li>
                 <button
@@ -279,7 +283,7 @@ export default function Navbar() {
               </li>
               <li>
                 <span className="block px-4 py-2 text-gray-500 cursor-not-allowed">
-                  More locations coming soon...
+                  {t('navbar.moreLocationsSoon')}
                 </span>
               </li>
             </ul>
@@ -288,7 +292,7 @@ export default function Navbar() {
                 onClick={() => setShowLocationPopup(false)}
                 className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
               >
-                Cancel
+                {t('navbar.cancel')}
               </button>
             </div>
           </div>

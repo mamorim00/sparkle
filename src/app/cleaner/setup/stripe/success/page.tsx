@@ -17,24 +17,45 @@ export default function StripeOnboardingSuccessPage() {
   useEffect(() => {
     const updateStripeStatus = async (userId: string) => {
       try {
-        // Update cleaner document to mark Stripe as connected
+        // Verify the Stripe account status with Stripe API
+        const statusResponse = await fetch("/api/stripe/check-account-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cleanerId: userId }),
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error("Failed to verify Stripe account status");
+        }
+
+        const statusData = await statusResponse.json();
+
+        // Only mark as fully connected if charges and payouts are enabled
+        const isFullyConnected = statusData.connected === true;
+
+        // Update cleaner document with verified status
         const cleanerRef = doc(db, "cleaners", userId);
         await updateDoc(cleanerRef, {
-          stripeAccountStatus: "active",
-          stripeConnected: true,
+          stripeAccountStatus: isFullyConnected ? "active" : "pending",
+          stripeConnected: isFullyConnected,
           stripeOnboardingCompletedAt: new Date().toISOString(),
         });
 
-        // Update sessionStorage to mark Stripe as connected
+        // Update sessionStorage to mark Stripe as connected (if fully connected)
         if (typeof window !== "undefined") {
           const savedData = sessionStorage.getItem("cleanerSetupData");
           if (savedData) {
             const data = JSON.parse(savedData);
-            data.stripeConnected = true;
+            data.stripeConnected = isFullyConnected;
             sessionStorage.setItem("cleanerSetupData", JSON.stringify(data));
           }
           // Set step to 5 (verification)
           sessionStorage.setItem("cleanerSetupStep", "5");
+        }
+
+        // Show warning if not fully connected
+        if (!isFullyConnected) {
+          setError(t('stripeSuccess.incompleteSetup') || "Stripe setup incomplete. Please complete all required information.");
         }
 
         setLoading(false);
@@ -55,7 +76,7 @@ export default function StripeOnboardingSuccessPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (

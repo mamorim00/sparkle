@@ -24,6 +24,7 @@ interface CleanerStats {
   completedBookings: number;
   totalEarnings: number;
   status: string;
+  stripeConnected?: boolean;
 }
 
 export default function CleanerDashboard() {
@@ -35,6 +36,7 @@ export default function CleanerDashboard() {
     completedBookings: 0,
     totalEarnings: 0,
     status: "pending",
+    stripeConnected: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -98,6 +100,7 @@ export default function CleanerDashboard() {
           completedBookings: completedSnapshot.size,
           totalEarnings,
           status: cleanerData.status || "pending",
+          stripeConnected: cleanerData.stripeConnected || false,
         });
       }
     } catch (error) {
@@ -111,7 +114,7 @@ export default function CleanerDashboard() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-lg mt-4 text-gray-600">{t('cleanerDashboard.loading')}</p>
+            <p className="text-lg mt-4 text-gray-600">{t('cleanerDashboard.loadingDashboard')}</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -125,7 +128,7 @@ export default function CleanerDashboard() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {t('cleanerDashboard.welcome')}, {cleanerName}!
+              {t('cleanerDashboard.welcomeBack')}, {cleanerName}!
             </h1>
             <p className="text-gray-600">{t('cleanerDashboard.subtitle')}</p>
 
@@ -135,9 +138,9 @@ export default function CleanerDashboard() {
                 <div className="flex items-center">
                   <AlertCircle className="w-5 h-5 text-yellow-600 mr-3" />
                   <div>
-                    <p className="text-sm font-semibold text-yellow-800">{t('cleanerDashboard.accountPending')}</p>
+                    <p className="text-sm font-semibold text-yellow-800">{t('cleanerDashboard.accountPendingApproval')}</p>
                     <p className="text-xs text-yellow-700 mt-1">
-                      {t('cleanerDashboard.accountPendingDescription')}
+                      {t('cleanerDashboard.accountUnderReview')}
                     </p>
                   </div>
                 </div>
@@ -151,8 +154,29 @@ export default function CleanerDashboard() {
                   <div>
                     <p className="text-sm font-semibold text-green-800">{t('cleanerDashboard.accountActive')}</p>
                     <p className="text-xs text-green-700 mt-1">
-                      {t('cleanerDashboard.accountActiveDescription')}
+                      {t('cleanerDashboard.accountApproved')}
                     </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Stripe Not Connected Warning */}
+            {!stats.stripeConnected && (stats.completedBookings > 0 || stats.totalEarnings > 0) && (
+              <div className="mt-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                <div className="flex items-center">
+                  <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800">Payment Account Not Connected</p>
+                    <p className="text-xs text-red-700 mt-1">
+                      You have €{stats.totalEarnings.toFixed(2)} in earnings but haven&apos;t connected your bank account. Connect Stripe to receive payments.
+                    </p>
+                    <Link
+                      href="/cleaner/profile"
+                      className="inline-block mt-2 text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                    >
+                      Connect Bank Account
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -239,7 +263,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.bookingRequestsDescription')}
+                {t('cleanerDashboard.reviewAndRespond')}
               </p>
             </Link>
 
@@ -257,7 +281,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.myBookingsDescription')}
+                {t('cleanerDashboard.viewManageBookings')}
               </p>
             </Link>
 
@@ -275,7 +299,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.availabilityProfileDescription')}
+                {t('cleanerDashboard.updateSchedule')}
               </p>
             </Link>
 
@@ -293,7 +317,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.earningsDescription')}
+                {t('cleanerDashboard.trackEarnings')}
               </p>
             </Link>
 
@@ -311,7 +335,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.myProfileDescription')}
+                {t('cleanerDashboard.viewRatings')}
               </p>
             </Link>
 
@@ -329,7 +353,7 @@ export default function CleanerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                {t('cleanerDashboard.supportCenterDescription')}
+                {t('cleanerDashboard.getHelp')}
               </p>
             </Link>
           </div>
@@ -341,7 +365,10 @@ export default function CleanerDashboard() {
                 <AlertCircle className="w-6 h-6 text-orange-600 mr-3 mt-0.5" />
                 <div>
                   <h3 className="text-lg font-bold text-orange-900 mb-2">
-                    {t('cleanerDashboard.youHave')} {stats.pendingRequests} {t('cleanerDashboard.pendingBookingRequest')}{stats.pendingRequests !== 1 ? "s" : ""}
+                    {stats.pendingRequests === 1
+                      ? t('cleanerDashboard.pendingBookingRequests').replace('{count}', stats.pendingRequests.toString())
+                      : t('cleanerDashboard.pendingBookingRequestsPlural').replace('{count}', stats.pendingRequests.toString())
+                    }
                   </h3>
                   <p className="text-sm text-orange-800 mb-4">
                     {t('cleanerDashboard.customersWaiting')}

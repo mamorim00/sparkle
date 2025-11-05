@@ -99,7 +99,7 @@ const getWeekdayName = (date: Date) => date.toLocaleDateString("en-US", { weekda
 
 // DELETED: getNextAvailableSlot is no longer needed
 
-const formatAvailability = (isoDateString: string) => {
+const formatAvailability = (isoDateString: string, currentLanguage: string) => {
   const date = new Date(isoDateString);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -110,22 +110,23 @@ const formatAvailability = (isoDateString: string) => {
   const comparisonDate = new Date(date);
   comparisonDate.setHours(0, 0, 0, 0);
 
-  const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+  const locale = currentLanguage === 'fi' ? 'fi-FI' : 'en-US';
+  const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: currentLanguage === 'en' };
 
   if (comparisonDate.getTime() === today.getTime()) {
-    return `Today at ${date.toLocaleTimeString([], timeOptions)}`;
+    return `Today at ${date.toLocaleTimeString(locale, timeOptions)}`;
   } else if (comparisonDate.getTime() === tomorrow.getTime()) {
-    return `Tomorrow at ${date.toLocaleTimeString([], timeOptions)}`;
+    return `Tomorrow at ${date.toLocaleTimeString(locale, timeOptions)}`;
   } else {
     const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-    return `${date.toLocaleDateString([], dateOptions)} at ${date.toLocaleTimeString([], timeOptions)}`;
+    return `${date.toLocaleDateString(locale, dateOptions)} ${date.toLocaleTimeString(locale, timeOptions)}`;
   }
 };
 
 
 // --- COMPONENT START ---
 export default function BookPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const params = useParams<{ cleanerId?: string }>();
   const router = useRouter();
   const cleanerId = params?.cleanerId ?? "";
@@ -301,7 +302,7 @@ export default function BookPage() {
   
 
 
-  if (!cleaner) return <p>{t('bookCleaner.loading')}</p>;
+  if (!cleaner) return <p>{t('bookPage.loading')}</p>;
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -313,11 +314,11 @@ export default function BookPage() {
         <div>
           <h1 className="text-xl font-bold">{cleaner.name}</h1>
           <p className="text-gray-500">{cleaner.location}</p>
-          <p className="text-sm text-yellow-500">{cleaner.rating !== undefined ? `★ ${cleaner.rating.toFixed(1)}` : t('bookCleaner.noRating')}</p>
-          <p className="font-semibold">{cleaner.pricePerHour}€ / {t('bookCleaner.hour')}</p>
+          <p className="text-sm text-yellow-500">{cleaner.rating !== undefined ? `★ ${cleaner.rating.toFixed(1)}` : t('bookPage.noRating')}</p>
+          <p className="font-semibold">{cleaner.pricePerHour}€ / {t('cleanerCard.hour')}</p>
           {nextAvailableTime ? (
              <p className="text-sm text-green-600 font-bold mt-1">
-                 {t('bookCleaner.nextAvailable')} ({selectedCleaning.durationHours}h): {formatAvailability(nextAvailableTime)}
+                 {t('bookPage.nextAvailable')} ({selectedCleaning.durationHours}h): {formatAvailability(nextAvailableTime, language)}
              </p>
           ) : (
              <p className="text-sm text-red-500 font-bold mt-1">
@@ -329,7 +330,7 @@ export default function BookPage() {
 
       {/* Cleaning Type */}
       <div className="mb-4">
-        <label className="block mb-1 font-semibold">{t('bookCleaner.selectCleaningType')}</label>
+        <label className="block mb-1 font-semibold">{t('bookPage.selectCleaningType')}</label>
         <select
           value={selectedCleaning.name}
           onChange={e => setSelectedCleaning(CLEANING_TYPES.find(c => c.name === e.target.value) || CLEANING_TYPES[0])}
@@ -377,7 +378,7 @@ export default function BookPage() {
           onClick={loadMoreDays}
           className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
         >
-          {t('bookCleaner.loadMoreDays')}
+          {t('bookPage.loadMoreDays')}
         </button>
       )}
     </div>

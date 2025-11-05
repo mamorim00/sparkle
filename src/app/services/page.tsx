@@ -9,55 +9,55 @@ export default function ServicesPage() {
   const services = [
     {
       icon: <Home className="w-12 h-12 text-blue-600" />,
-      title: "Standard House Cleaning",
-      description: "Regular cleaning to keep your home fresh and tidy",
+      title: t('servicesPage.standardCleaning'),
+      description: t('servicesPage.standardDesc'),
       features: [
-        "Dusting all surfaces",
-        "Vacuuming & mopping floors",
-        "Kitchen & bathroom cleaning",
-        "Trash removal",
+        t('servicesPage.dustingSurfaces'),
+        t('servicesPage.vacuumingMopping'),
+        t('servicesPage.kitchenBathroom'),
+        t('servicesPage.trashRemoval'),
       ],
-      duration: "2-4 hours",
-      price: "From €50",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Sparkles className="w-12 h-12 text-blue-600" />,
-      title: "Deep Cleaning",
-      description: "Thorough top-to-bottom cleaning for your entire home",
+      title: t('servicesPage.deepCleaning'),
+      description: t('servicesPage.deepCleaningDesc'),
       features: [
-        "Everything in standard cleaning",
-        "Inside appliances (oven, fridge)",
-        "Baseboards & window sills",
-        "Behind furniture",
+        t('servicesPage.standardPlus'),
+        t('servicesPage.insideAppliances'),
+        t('servicesPage.baseboards'),
+        t('servicesPage.behindFurniture'),
       ],
-      duration: "4-8 hours",
-      price: "From €120",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Building2 className="w-12 h-12 text-blue-600" />,
-      title: "Move-In / Move-Out",
-      description: "Complete cleaning for transitions",
+      title: t('servicesPage.moveInOut'),
+      description: t('servicesPage.moveInOutDesc'),
       features: [
-        "All rooms deep cleaned",
-        "Inside all cabinets & closets",
-        "Window cleaning (inside)",
-        "Detailed bathroom & kitchen",
+        t('servicesPage.allRoomsDeep'),
+        t('servicesPage.insideCabinets'),
+        t('servicesPage.windowCleaning'),
+        t('servicesPage.detailedBathKitchen'),
       ],
-      duration: "5-10 hours",
-      price: "From €150",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
     {
       icon: <Clock className="w-12 h-12 text-blue-600" />,
-      title: "Recurring Cleaning",
-      description: "Regular scheduled cleaning service",
+      title: t('servicesPage.recurringCleaning'),
+      description: t('servicesPage.recurringDesc'),
       features: [
-        "Weekly, bi-weekly, or monthly",
-        "Same cleaner each visit",
-        "Customizable cleaning checklist",
-        "Discounted rates",
+        t('servicesPage.weeklyBiweekly'),
+        t('servicesPage.sameCleaner'),
+        t('servicesPage.customChecklist'),
+        t('servicesPage.discountedRates'),
       ],
-      duration: "2-4 hours",
-      price: "From €45/visit",
+      duration: t('servicesPage.duration'),
+      price: t('servicesPage.startingAt'),
     },
   ];
 
@@ -74,7 +74,7 @@ export default function ServicesPage() {
             href="/cleaners"
             className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 hover:shadow-xl transition-all shadow-lg"
           >
-            {t('servicesPage.bookNow')}
+            {t('servicesPage.bookCleanerNow')}
           </Link>
         </div>
       </section>
@@ -86,7 +86,7 @@ export default function ServicesPage() {
             {t('servicesPage.whatWeOffer')}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t('servicesPage.whatWeOfferDesc')}
+            {t('servicesPage.coverageDesc')}
           </p>
         </div>
 
@@ -149,27 +149,27 @@ export default function ServicesPage() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.step1Title')}</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.chooseService')}</h3>
               <p className="text-gray-600">
-                {t('servicesPage.step1Desc')}
+                {t('servicesPage.chooseServiceDesc')}
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.step2Title')}</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.bookPay')}</h3>
               <p className="text-gray-600">
-                {t('servicesPage.step2Desc')}
+                {t('servicesPage.bookPayDesc')}
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.step3Title')}</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('servicesPage.relax')}</h3>
               <p className="text-gray-600">
-                {t('servicesPage.step3Desc')}
+                {t('servicesPage.relaxDesc')}
               </p>
             </div>
           </div>
@@ -179,9 +179,9 @@ export default function ServicesPage() {
       {/* CTA */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 px-6 text-center">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold mb-4">{t('servicesPage.ctaTitle')}</h2>
+          <h2 className="text-3xl font-bold mb-4">{t('servicesPage.readyToStart')}</h2>
           <p className="text-xl mb-8">
-            {t('servicesPage.ctaSubtitle')}
+            {t('servicesPage.bookInClicks')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

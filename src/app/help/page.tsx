@@ -15,12 +15,12 @@ export default function HelpCenterPage() {
   const faqs = faqCategories.map((categoryKey) => {
     const questionCount = categoryKey === "bookingPayment" || categoryKey === "forCustomers" || categoryKey === "forCleaners" || categoryKey === "accountTechnical" ? 4 : 0;
     const questions = Array.from({ length: questionCount }, (_, i) => ({
-      question: t(`help.${categoryKey}.q${i + 1}`),
-      answer: t(`help.${categoryKey}.a${i + 1}`),
+      question: t(`helpPage.${categoryKey}.q${i + 1}`),
+      answer: t(`helpPage.${categoryKey}.a${i + 1}`),
     }));
 
     return {
-      category: t(`help.${categoryKey}Category`),
+      category: t(`helpPage.${categoryKey}`),
       questions,
     };
   });
@@ -45,9 +45,9 @@ export default function HelpCenterPage() {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 px-6 text-center">
         <div className="max-w-4xl mx-auto">
           <HelpCircle className="w-16 h-16 mx-auto mb-6" />
-          <h1 className="text-5xl font-bold mb-6">{t('help.title')}</h1>
+          <h1 className="text-5xl font-bold mb-6">{t('helpPage.title')}</h1>
           <p className="text-xl mb-8">
-            {t('help.subtitle')}
+            {t('helpPage.subtitle')}
           </p>
 
           {/* Search Bar */}
@@ -55,7 +55,7 @@ export default function HelpCenterPage() {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder={t('help.searchPlaceholder')}
+              placeholder={t('helpPage.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-4 rounded-lg text-gray-900 text-lg focus:ring-2 focus:ring-blue-300 outline-none"
@@ -69,9 +69,9 @@ export default function HelpCenterPage() {
         {filteredFaqs.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 text-lg">
-              {t('help.noResults')} &quot;{searchQuery}&quot;. {t('help.tryDifferent')}{" "}
+              {t('helpPage.noResultsFound')} &quot;{searchQuery}&quot;. {t('helpPage.tryDifferent')}{" "}
               <Link href="/contact" className="text-blue-600 hover:underline">
-                {t('help.contactUs')}
+                {t('helpPage.contactUs')}
               </Link>
               .
             </p>
@@ -129,23 +129,23 @@ export default function HelpCenterPage() {
         <div className="max-w-4xl mx-auto text-center">
           <MessageCircle className="w-16 h-16 text-blue-600 mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            {t('help.stillNeedHelp')}
+            {t('helpPage.stillNeedHelp')}
           </h2>
           <p className="text-gray-600 mb-8 text-lg">
-            {t('help.supportTeam')}
+            {t('helpPage.supportTeamReady')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact"
               className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 hover:shadow-xl transition-all shadow-lg"
             >
-              {t('help.contactSupport')}
+              {t('helpPage.contactSupport')}
             </Link>
             <a
               href="mailto:hello@sparkle.example"
               className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 hover:shadow-lg transition-all"
             >
-              {t('help.emailUs')}
+              {t('helpPage.emailUsBtn')}
             </a>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function HelpCenterPage() {
       {/* Quick Links */}
       <section className="max-w-5xl mx-auto py-16 px-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-          {t('help.quickLinks')}
+          {t('helpPage.quickLinks')}
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           <Link
@@ -162,10 +162,10 @@ export default function HelpCenterPage() {
             className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:border-blue-300 transition-all text-center border-2 border-gray-200"
           >
             <h3 className="font-semibold text-lg text-gray-900 mb-2">
-              {t('help.ourServices')}
+              {t('helpPage.ourServices')}
             </h3>
             <p className="text-gray-600 text-sm">
-              {t('help.ourServicesDesc')}
+              {t('helpPage.learnAboutServices')}
             </p>
           </Link>
           <Link
@@ -173,10 +173,10 @@ export default function HelpCenterPage() {
             className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:border-blue-300 transition-all text-center border-2 border-gray-200"
           >
             <h3 className="font-semibold text-lg text-gray-900 mb-2">
-              {t('help.termsOfService')}
+              {t('helpPage.termsOfService')}
             </h3>
             <p className="text-gray-600 text-sm">
-              {t('help.termsOfServiceDesc')}
+              {t('helpPage.readTerms')}
             </p>
           </Link>
           <Link
@@ -184,10 +184,10 @@ export default function HelpCenterPage() {
             className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:border-blue-300 transition-all text-center border-2 border-gray-200"
           >
             <h3 className="font-semibold text-lg text-gray-900 mb-2">
-              {t('help.privacyPolicy')}
+              {t('helpPage.privacyPolicy')}
             </h3>
             <p className="text-gray-600 text-sm">
-              {t('help.privacyPolicyDesc')}
+              {t('helpPage.howWeProtect')}
             </p>
           </Link>
         </div>

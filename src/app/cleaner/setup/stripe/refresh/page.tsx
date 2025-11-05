@@ -57,7 +57,7 @@ export default function StripeOnboardingRefreshPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
