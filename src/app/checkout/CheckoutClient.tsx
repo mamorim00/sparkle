@@ -117,11 +117,11 @@ export default function CheckoutClient() {
   const handleRegister = async () => {
     setError("");
     if (!authData.name || !authData.email || !authData.password) {
-      setError(t('checkout.fillAllFields'));
+      setError(t('checkoutPage.fillAllFields'));
       return;
     }
     if (authData.password.length < 6) {
-      setError(t('checkout.passwordLength'));
+      setError(t('checkoutPage.passwordTooShort'));
       return;
     }
     try {
@@ -136,7 +136,7 @@ export default function CheckoutClient() {
   const handleLogin = async () => {
     setError("");
     if (!authData.email || !authData.password) {
-      setError(t('checkout.provideEmailPassword'));
+      setError(t('checkoutPage.provideEmailPassword'));
       return;
     }
     try {
@@ -150,12 +150,12 @@ export default function CheckoutClient() {
   // --- Checkout handler ---
   const handleCheckout = async () => {
     if (!bookingDetails) {
-      setError(t('checkout.bookingDataMissing'));
+      setError(t('checkoutPage.bookingDataMissing'));
       return;
     }
 
     if (!currentUser && (!contactData.name.trim() || !contactData.email.trim())) {
-      setError(t('checkout.provideNameEmail'));
+      setError(t('checkoutPage.provideNameEmail'));
       return;
     }
 
@@ -201,17 +201,17 @@ export default function CheckoutClient() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-indigo-600"></div>
-        <p className="text-lg mt-4 text-gray-600">{t('checkout.preparingCheckout')}</p>
+        <p className="text-lg mt-4 text-gray-600">{t('checkoutPage.preparingCheckout')}</p>
       </div>
     </div>
   );
 
   if (!bookingDetails) return (
     <div className="max-w-md mx-auto p-6 mt-10 bg-red-50 border border-red-200 rounded-xl">
-      <h1 className="text-xl font-bold text-red-700">{t('checkout.bookingError')}</h1>
-      <p className="text-red-500 mt-2">{t('checkout.couldNotLoad')}</p>
+      <h1 className="text-xl font-bold text-red-700">{t('checkoutPage.bookingError')}</h1>
+      <p className="text-red-500 mt-2">{t('checkoutPage.couldNotLoadDetails')}</p>
       <button onClick={() => router.back()} className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition">
-        {t('checkout.goBack')}
+        {t('checkoutPage.goBack')}
       </button>
     </div>
   );
@@ -222,35 +222,35 @@ export default function CheckoutClient() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-12">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 md:p-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
-          <Zap className="w-7 h-7 mr-3 text-indigo-600" /> {t('checkout.title')}
+          <Zap className="w-7 h-7 mr-3 text-indigo-600" /> {t('checkoutPage.secureCheckout')}
         </h1>
 
         {/* Order Summary */}
         <section className="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
-          <h2 className="font-semibold text-gray-900 mb-4 text-lg">{t('checkout.orderSummary')}</h2>
+          <h2 className="font-semibold text-gray-900 mb-4 text-lg">{t('checkoutPage.orderSummary')}</h2>
           <div className="space-y-2 text-gray-700">
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('checkout.cleaner')}:</span>
+              <span className="text-gray-600">{t('checkoutPage.cleaner')}:</span>
               <span className="font-medium">{bookingDetails.cleanerName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('checkout.date')}:</span>
+              <span className="text-gray-600">{t('checkoutPage.date')}:</span>
               <span className="font-medium">{bookingDetails.date}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('checkout.time')}:</span>
+              <span className="text-gray-600">{t('checkoutPage.time')}:</span>
               <span className="font-medium">{bookingDetails.start} - {bookingDetails.end}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('checkout.service')}:</span>
+              <span className="text-gray-600">{t('checkoutPage.service')}:</span>
               <span className="font-medium">{bookingDetails.cleaningType}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('checkout.duration')}:</span>
+              <span className="text-gray-600">{t('checkoutPage.duration')}:</span>
               <span className="font-medium">{bookingDetails.duration} {t('common.hours')}</span>
             </div>
             <div className="pt-3 mt-3 border-t border-gray-300 flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">{t('checkout.total')}:</span>
+              <span className="text-lg font-semibold text-gray-900">{t('checkoutPage.total')}:</span>
               <span className="text-2xl font-bold text-indigo-600">{bookingDetails.formattedPrice}</span>
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function CheckoutClient() {
                 <UserIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{t('checkout.loggedInAs')}</h3>
+                <h3 className="font-semibold text-gray-900">{t('checkoutPage.loggedInAs')}</h3>
                 <p className="text-sm text-gray-600">{currentUser.displayName || currentUser.email}</p>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function CheckoutClient() {
                     : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
-                {t('checkout.continueAsGuest')}
+                {t('checkoutPage.continueAsGuest')}
               </button>
               <button
                 onClick={() => {
@@ -297,7 +297,7 @@ export default function CheckoutClient() {
                     : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
-                {t('checkout.login')}
+                {t('checkoutPage.login')}
               </button>
               <button
                 onClick={() => {
@@ -310,7 +310,7 @@ export default function CheckoutClient() {
                     : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
-                {t('checkout.register')}
+                {t('checkoutPage.register')}
               </button>
             </div>
 
@@ -318,40 +318,40 @@ export default function CheckoutClient() {
             {authMode === "guest" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.fullName')} *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.fullName')} *</label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
                       value={contactData.name}
                       onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
-                      placeholder={t('checkout.enterName')}
+                      placeholder={t('checkoutPage.enterYourName')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.emailAddress')} *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.emailAddress')} *</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="email"
                       value={contactData.email}
                       onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
-                      placeholder={t('checkout.emailPlaceholder')}
+                      placeholder={t('checkoutPage.enterYourEmail')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.phoneOptional')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.phoneNumber')} ({t('checkoutPage.optional')})</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="tel"
                       value={contactData.phone}
                       onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
-                      placeholder={t('checkout.phonePlaceholder')}
+                      placeholder={t('checkoutPage.enterPhoneNumber')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
@@ -363,27 +363,27 @@ export default function CheckoutClient() {
             {authMode === "login" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.emailAddress')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.emailAddress')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="email"
                       value={authData.email}
                       onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
-                      placeholder={t('checkout.emailPlaceholder')}
+                      placeholder={t('checkoutPage.enterYourEmail')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.password')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.password')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? "text" : "password"}
                       value={authData.password}
                       onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
-                      placeholder={t('checkout.enterPassword')}
+                      placeholder={t('checkoutPage.enterPassword')}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                     <button
@@ -399,7 +399,7 @@ export default function CheckoutClient() {
                   onClick={handleLogin}
                   className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
                 >
-                  {t('checkout.login')}
+                  {t('checkoutPage.login')}
                 </button>
               </div>
             )}
@@ -408,40 +408,40 @@ export default function CheckoutClient() {
             {authMode === "register" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.fullName')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.fullName')}</label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
                       value={authData.name}
                       onChange={(e) => setAuthData({ ...authData, name: e.target.value })}
-                      placeholder={t('checkout.enterName')}
+                      placeholder={t('checkoutPage.enterYourName')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.emailAddress')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.emailAddress')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="email"
                       value={authData.email}
                       onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
-                      placeholder={t('checkout.emailPlaceholder')}
+                      placeholder={t('checkoutPage.enterYourEmail')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkout.password')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('checkoutPage.password')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? "text" : "password"}
                       value={authData.password}
                       onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
-                      placeholder={t('checkout.passwordPlaceholder')}
+                      placeholder={t('checkoutPage.atLeast6Chars')}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                     <button
@@ -457,7 +457,7 @@ export default function CheckoutClient() {
                   onClick={handleRegister}
                   className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
                 >
-                  {t('checkout.createAccount')}
+                  {t('checkoutPage.createAccount')}
                 </button>
               </div>
             )}
@@ -480,18 +480,18 @@ export default function CheckoutClient() {
           {loading ? (
             <span className="flex items-center gap-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              {t('checkout.processing')}
+              {t('checkoutPage.processing')}
             </span>
           ) : (
             <>
-              {t('checkout.payNow')}
+              {t('checkoutPage.payNowWithStripe')}
               <Lock className="w-5 h-5 ml-2" />
             </>
           )}
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-4">
-          {t('checkout.securedByStripe')}
+          {t('checkoutPage.securedByStripe')}
         </p>
       </div>
     </div>
