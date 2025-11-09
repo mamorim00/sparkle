@@ -77,7 +77,18 @@
     "satisfactionGuaranteed": "Tyytyväisyystakuu",
     "satisfactionGuaranteedDesc": "Onnellisuutesi on prioriteettimme. Jos et ole tyytyväinen, korjaamme asian 100% tyytyväisyystakuullamme.",
     "exploreAllServices": "Tutustu kaikkiin palveluihin",
-    "noCleanersYet": "Siivoojia ei vielä saatavilla"
+    "noCleanersYet": "Siivoojia ei vielä saatavilla",
+    "customerReviews": "Mitä asiakkaamme sanovat",
+    "customerReviewsSubtitle": "Aitoja kokemuksia ihmisiltä, jotka luottavat Sparkleen siivoustarpeissaan",
+    "review1Text": "Ehdottoman upea palvelu! Siivooja oli ammattimainen, perusteellinen ja asuntoni ei ole koskaan näyttänyt näin hyvältä. Varaaminen oli myös niin helppoa!",
+    "review1Name": "Emma Virtanen",
+    "review1Location": "Helsinki",
+    "review2Text": "Olen käyttänyt Sparklea kolme kertaa ja jokainen kokemus on ollut erinomainen. Luotettavia siivooijia ja loistavaa asiakaspalvelua.",
+    "review2Name": "Mikko Laakso",
+    "review2Location": "Espoo",
+    "review3Text": "Paras siivouspalvelu, jonka olen löytänyt Suomesta! He ovat aina ajoissa, tekevät upean työn ja hinnoittelu on erittäin reilua. Suosittelen lämpimästi!",
+    "review3Name": "Sofia Mäkelä",
+    "review3Location": "Vantaa"
   },
   "services": {
     "simple-clean": {
@@ -284,7 +295,7 @@
   },
   "cleanerDashboard": {
     "welcomeBack": "Tervetuloa takaisin",
-    "subtitle": "Hallinnoi varauk siasi, aikatauluasi ja profiiliasi",
+    "subtitle": "Hallinnoi varauksiasi siasi, aikatauluasi ja profiiliasi",
     "loadingDashboard": "Ladataan hallintapaneelia...",
     "pendingRequests": "Odottavat pyynnöt",
     "upcomingBookings": "Tulevat varaukset",
@@ -329,8 +340,52 @@
   },
   "cleanerSetup": {
     "step": "Vaihe",
-    "of": "/"
+    "of": "/",
+    "step1": {
+      "title": "Luo profiilisi",
+      "fullNamePlaceholder": "Koko nimi",
+      "usernamePlaceholder": "Käyttäjänimi",
+      "fillAllFields": "Täytä kaikki kentät ja lisää kuva.",
+      "uploading": "Lähetetään...",
+      "continue": "Jatka",
+      "profilePic": "Lataa profiilikuva"
+    },
+    "step2": {
+      "title": "Aseta tuntihinta ja palvelut",
+      "hourlyRate": "Tuntihinta (€)",
+      "pricePlaceholder": "Kirjoita tuntihintasi",
+      "servicesOffered": "Tarjoamasi palvelut",
+      "selectAll": "Valitse kaikki palvelut, joita voit tarjota.",
+      "servicesSelected": "palvelua valittu",
+      "validPrice": "Anna kelvollinen tuntihinta.",
+      "selectService": "Valitse vähintään yksi palvelu."
+    },
+    "step3": {
+      "title": "Aseta saatavuutesi",
+      "description": "Määritä viikkoaikataulusi ja mahdolliset poikkeukset (vapaapäivät tai ylimääräiset vuorot).",
+      "pleaseLogin": "Kirjaudu sisään hallitaksesi saatavuuttasi.",
+      "continueToVerification": "Jatka maksujen asetuksiin"
+    },
+    "step4": {
+      "title": "Yhdistä pankkitilisi",
+      "description": "Määritä turvalliset maksut vastaanottaaksesi tulosi suoraan pankkitilillesi.",
+      "howPaymentsWork": "Miten maksut toimivat",
+      "receive85": "Saat 85% jokaisesta varauksesta (pidämme 15% alustan maksuna)",
+      "automaticPayouts": "Automaattiset maksut valmiiden töiden jälkeen",
+      "securePayments": "Turvalliset maksut Stripen kautta",
+      "trackEarnings": "Seuraa tulojasi hallintapaneelissa",
+      "note": "Huomautus",
+      "redirectNote": "Sinut ohjataan Stripeen asetusten viimeistelyä varten. Varmista, että sinulla on pankkitietosi valmiina.",
+      "failedCreateAccount": "Stripe-tilin luominen epäonnistui",
+      "failedOnboardingLink": "Rekisteröintilinkin luominen epäonnistui",
+      "failedConnectStripe": "Stripen yhdistäminen epäonnistui",
+      "accountCreated": "Tili luotu onnistuneesti! Ohjataan Stripeen...",
+      "connectBankAccount": "Yhdistä pankkitili",
+      "settingUpStripe": "Määritetään Stripea...",
+      "skipForNow": "Ohita toistaiseksi (voit tehdä tämän myöhemmin)"
+    }
   },
+
   "aboutPage": {
     "title": "Tietoa Sparklesta",
     "subtitle": "Teemme luotettavista siivouspalveluista yksinkertaisia, luotettavia ja kaikkien saatavilla olevia.",
@@ -487,7 +542,6 @@
     "completedJobs": "Valmiit",
     "thisWeek": "Tällä viikolla",
     "totalEarned": "Yhteensä ansaittu",
-    "pendingRequests": "Odottavat pyynnöt",
     "upcoming": "Tulevat",
     "completed": "Valmiit",
     "cancelled": "Peruutetut",
@@ -666,7 +720,6 @@
   "ticketsTab": {
     "openTickets": "Avoimet tiketit",
     "inProgress": "Käsittelyssä",
-    "resolved": "Ratkaistu",
     "totalTickets": "Tiketit yhteensä",
     "allTickets": "Kaikki tiketit",
     "noTicketsFound": "Tikettejä ei löytynyt",
@@ -699,7 +752,6 @@
     "loadingDashboard": "Ladataan hallintapaneelia...",
     "overview": "Yleiskatsaus",
     "cleaners": "Siivoojat",
-    "bookings": "Varaukset",
     "users": "Käyttäjät",
     "tickets": "Tiketit",
     "totalBookings": "Varaukset yhteensä",
@@ -777,7 +829,19 @@
     "ticketSubmitted": "Tiketti lähetetty onnistuneesti! Tiimimme tarkistaa sen pian.",
     "mustBeLoggedIn": "Sinun on kirjauduttava sisään lähettääksesi tiketin",
     "fillAllFields": "Täytä kaikki pakolliset kentät",
-    "failedToSubmit": "Tiketin lähettäminen epäonnistui. Yritä uudelleen."
+    "failedToSubmit": "Tiketin lähettäminen epäonnistui. Yritä uudelleen.",
+    "successModal": {
+      "title": "Tiketti lähetetty!",
+      "ticketNumber": "Tikettinumerosi on:",
+      "estimatedResponse": "Arvioitu vastausaika",
+      "basedOnPriority": "Perustuu {priority} prioriteettiin",
+      "reviewMessage": "Tukitiimimme tarkistaa tikettisi ja vastaa sinulle mahdollisimman pian. Saat sähköposti-ilmoituksen, kun on päivitys.",
+      "gotIt": "Selvä, kiitos!",
+      "urgent": "2-4 tunnin sisällä",
+      "high": "6-12 tunnin sisällä",
+      "medium": "24 tunnin sisällä",
+      "low": "48 tunnin sisällä"
+    }
   },
   "termsPage": {
     "title": "Käyttöehdot",

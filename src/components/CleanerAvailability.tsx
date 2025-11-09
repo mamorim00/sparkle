@@ -2,7 +2,7 @@
 
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { db } from "../lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface TimeSlot {
   start: string;
@@ -27,6 +27,8 @@ const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ 
   const [schedule, setSchedule] = useState<Record<string, TimeSlot[]>>({});
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [newException, setNewException] = useState<Exception>({ date: "", start: "", end: "" });
 
   // Fetch existing schedule from Firestore
@@ -94,16 +96,22 @@ const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ 
 
   // Save to Firestore
   const saveSchedule = async () => {
+    setSaving(true);
+    setSaveMessage(null);
     try {
       const cleanerRef = doc(db, "cleaners", cleanerId);
-      await updateDoc(cleanerRef, {
+      // Use setDoc with merge to create the document if it doesn't exist
+      await setDoc(cleanerRef, {
         schedule,
         exceptions,
-      });
-      alert("Schedule saved successfully!");
+      }, { merge: true });
+      setSaveMessage({ type: 'success', text: 'Schedule saved successfully!' });
+      setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
       console.error("Error saving schedule:", err);
-      alert("Failed to save schedule.");
+      setSaveMessage({ type: 'error', text: 'Failed to save schedule. Please try again.' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -157,28 +165,28 @@ const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ 
 
       {/* Exceptions */}
       <h3 className="text-lg font-semibold mt-6 mb-2">Exceptions (Days Off or Extra Shifts)</h3>
-      <div className="flex gap-2 items-center mb-4">
+      <div className="flex flex-wrap gap-2 items-center mb-4">
         <input
           type="date"
           value={newException.date}
           onChange={(e) => setNewException({ ...newException, date: e.target.value })}
-          className="border p-2 rounded"
+          className="border p-2 rounded flex-1 min-w-[140px]"
         />
         <input
           type="time"
           value={newException.start}
           onChange={(e) => setNewException({ ...newException, start: e.target.value })}
-          className="border p-2 rounded"
+          className="border p-2 rounded flex-1 min-w-[100px]"
         />
         <input
           type="time"
           value={newException.end}
           onChange={(e) => setNewException({ ...newException, end: e.target.value })}
-          className="border p-2 rounded"
+          className="border p-2 rounded flex-1 min-w-[100px]"
         />
         <button
           onClick={addException}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors whitespace-nowrap"
         >
           Add
         </button>
@@ -198,12 +206,31 @@ const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ 
         </div>
       ))}
 
+      {/* Save Message */}
+      {saveMessage && (
+        <div className={`mt-4 p-3 rounded-lg ${
+          saveMessage.type === 'success'
+            ? 'bg-green-50 border border-green-200 text-green-800'
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {saveMessage.text}
+        </div>
+      )}
+
       {/* Save Button */}
       <button
         onClick={saveSchedule}
-        className="mt-6 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold"
+        disabled={saving}
+        className="mt-6 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
-        Save Schedule
+        {saving ? (
+          <>
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+            <span>Saving...</span>
+          </>
+        ) : (
+          'Save Schedule'
+        )}
       </button>
     </div>
   );

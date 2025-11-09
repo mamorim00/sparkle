@@ -50,6 +50,7 @@ export default function Step1Profile({ onNext, initialData }: Step1ProfileProps)
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
+      <h4 className="text-xl font-bold mb-4">{t('cleanerSetup.step1.profilePic')}</h4>
       <input
         type="file"
         accept="image/*"

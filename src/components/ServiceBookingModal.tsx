@@ -23,7 +23,6 @@ interface ServiceBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   serviceId: string;
-  serviceName: string;
   serviceDuration: number; // 2 or 6 hours
   location: string;
 }
@@ -32,7 +31,6 @@ export default function ServiceBookingModal({
   isOpen,
   onClose,
   serviceId,
-  serviceName,
   serviceDuration,
   location,
 }: ServiceBookingModalProps) {
@@ -130,9 +128,9 @@ export default function ServiceBookingModal({
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-white">{serviceName}</h2>
+            <h2 className="text-2xl font-bold text-white">{t(`services.${serviceId}.name`)}</h2>
             <p className="text-blue-100 text-sm mt-1">
-              {serviceDuration} hour service • Select your cleaner
+              {serviceDuration} {t('serviceBookingModal.hourService')} • {t('serviceBookingModal.selectYourCleaner')}
             </p>
           </div>
           <button
@@ -148,24 +146,24 @@ export default function ServiceBookingModal({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-              <p className="text-gray-600 mt-4">Finding available cleaners...</p>
+              <p className="text-gray-600 mt-4">{t('serviceBookingModal.findingCleaners')}</p>
             </div>
           ) : cleaners.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 text-lg mb-4">
-                No cleaners available for {serviceDuration}-hour bookings in {location}
+                {t('serviceBookingModal.noCleanersAvailable')} {serviceDuration}-{t('serviceBookingModal.hourBookingsIn')} {location}
               </p>
               <button
                 onClick={onClose}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                Try another service
+                {t('serviceBookingModal.tryAnotherService')}
               </button>
             </div>
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 mb-4">
-                Showing {cleaners.length} cleaner{cleaners.length !== 1 ? "s" : ""} sorted by earliest availability
+                {t('serviceBookingModal.showing')} {cleaners.length} {cleaners.length !== 1 ? t('serviceBookingModal.cleaners') : t('serviceBookingModal.cleaner')} {t('serviceBookingModal.sortedByAvailability')}
               </p>
 
               {cleaners.map((cleaner, index) => {
@@ -181,7 +179,7 @@ export default function ServiceBookingModal({
                   >
                     {isTopChoice && (
                       <div className="absolute -top-3 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                        ⚡ Earliest Available
+                        ⚡ {t('serviceBookingModal.earliestAvailable')}
                       </div>
                     )}
 
@@ -231,7 +229,7 @@ export default function ServiceBookingModal({
                               : "bg-blue-600 text-white hover:bg-blue-700"
                           }`}
                         >
-                          Book Now
+                          {t('serviceBookingModal.bookNow')}
                         </button>
                       </div>
                     </div>
@@ -245,7 +243,7 @@ export default function ServiceBookingModal({
         {/* Footer */}
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
           <p className="text-sm text-gray-600 text-center">
-            Can&apos;t find what you&apos;re looking for?{" "}
+            {t('serviceBookingModal.cantFind')}{" "}
             <button
               onClick={() => {
                 router.push(`/cleaners?service=${serviceId}`);
@@ -253,7 +251,7 @@ export default function ServiceBookingModal({
               }}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              View all cleaners
+              {t('serviceBookingModal.viewAllCleaners')}
             </button>
           </p>
         </div>

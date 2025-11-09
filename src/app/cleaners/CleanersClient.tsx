@@ -89,7 +89,9 @@ export default function CleanersClient() {
   const filteredCleaners = useMemo(() => {
     return cleaners.filter((cleaner) => {
       const priceInRange = cleaner.pricePerHour >= priceRange[0] && cleaner.pricePerHour <= priceRange[1];
-      const ratingAboveMin = cleaner.rating >= minRating;
+      // If minRating is 0 (all ratings), include cleaners with no rating
+      // Otherwise, only filter by rating if the cleaner has a rating
+      const ratingAboveMin = minRating === 0 ? true : (cleaner.rating || 0) >= minRating;
       return priceInRange && ratingAboveMin;
     });
   }, [cleaners, priceRange, minRating]);

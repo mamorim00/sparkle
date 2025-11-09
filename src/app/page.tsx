@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useLocation } from "../context/LocationContext";
 import { useLanguage } from "../context/LanguageContext";
 import { SERVICES, type Service } from "../lib/constants";
-import { ChevronLeft, ChevronRight, Sparkles, Shield, Clock, Award } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Shield, Clock, Award, Star, Quote } from "lucide-react";
 
 interface Cleaner {
   id: string;
@@ -264,6 +264,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Popular Services */}
+      <section className="py-20 px-6 max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl font-bold text-primary-dark mb-14 text-center tracking-tight">
+          {t('home.popularServices')}
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {ALL_SERVICES.map((service) => (
+            <div
+              key={service.id}
+              onClick={() => handleServiceCardClick(service)}
+              className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-accent/30 transform hover:-translate-y-1"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="p-4 rounded-xl bg-accent-50 text-accent group-hover:bg-accent group-hover:text-white transition-colors duration-300">
+                  {service.icon}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-primary-dark mb-2">
+                    {t(`services.${service.id}.name`)}
+                  </h3>
+                  <p className="text-sm text-neutral-light leading-relaxed">
+                    {t(`services.${service.id}.description`)}
+                  </p>
+                  <p className="text-xs text-accent font-semibold mt-2">
+                    {service.durationHours} {t('common.hours')} {t('common.service')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* What We Do Section */}
       <section className="py-24 px-6 bg-gradient-to-b from-white to-primary">
         <div className="max-w-7xl mx-auto">
@@ -330,37 +364,89 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Popular Services */}
+      {/* Customer Reviews Section */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-primary-dark mb-14 text-center tracking-tight">
-          {t('home.popularServices')}
-        </h2>
+        <div className="text-center mb-14">
+          <h2 className="text-4xl md:text-5xl font-bold text-primary-dark mb-4 tracking-tight">
+            {t('home.customerReviews')}
+          </h2>
+          <p className="text-lg text-neutral-light max-w-2xl mx-auto">
+            {t('home.customerReviewsSubtitle')}
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {ALL_SERVICES.map((service) => (
-            <div
-              key={service.id}
-              onClick={() => handleServiceCardClick(service)}
-              className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-accent/30 transform hover:-translate-y-1"
-            >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="p-4 rounded-xl bg-accent-50 text-accent group-hover:bg-accent group-hover:text-white transition-colors duration-300">
-                  {service.icon}
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-primary-dark mb-2">
-                    {t(`services.${service.id}.name`)}
-                  </h3>
-                  <p className="text-sm text-neutral-light leading-relaxed">
-                    {t(`services.${service.id}.description`)}
-                  </p>
-                  <p className="text-xs text-accent font-semibold mt-2">
-                    {service.durationHours} {t('common.hours')} {t('common.service')}
-                  </p>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Review 1 */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+            <Quote className="absolute top-6 right-6 w-12 h-12 text-accent/10" />
+            <div className="flex gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 fill-accent text-accent" />
+              ))}
+            </div>
+            <p className="text-neutral-light leading-relaxed mb-6 relative z-10">
+              &quot;{t('home.review1Text')}&quot;
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-accent-50 rounded-full flex items-center justify-center">
+                <span className="text-accent font-semibold text-lg">
+                  {t('home.review1Name').charAt(0)}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-primary-dark">{t('home.review1Name')}</p>
+                <p className="text-sm text-neutral-light">{t('home.review1Location')}</p>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Review 2 */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+            <Quote className="absolute top-6 right-6 w-12 h-12 text-accent/10" />
+            <div className="flex gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 fill-accent text-accent" />
+              ))}
+            </div>
+            <p className="text-neutral-light leading-relaxed mb-6 relative z-10">
+              &quot;{t('home.review2Text')}&quot;
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-accent-50 rounded-full flex items-center justify-center">
+                <span className="text-accent font-semibold text-lg">
+                  {t('home.review2Name').charAt(0)}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-primary-dark">{t('home.review2Name')}</p>
+                <p className="text-sm text-neutral-light">{t('home.review2Location')}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Review 3 */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+            <Quote className="absolute top-6 right-6 w-12 h-12 text-accent/10" />
+            <div className="flex gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 fill-accent text-accent" />
+              ))}
+            </div>
+            <p className="text-neutral-light leading-relaxed mb-6 relative z-10">
+              &quot;{t('home.review3Text')}&quot;
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-accent-50 rounded-full flex items-center justify-center">
+                <span className="text-accent font-semibold text-lg">
+                  {t('home.review3Name').charAt(0)}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-primary-dark">{t('home.review3Name')}</p>
+                <p className="text-sm text-neutral-light">{t('home.review3Location')}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -450,7 +536,6 @@ export default function HomePage() {
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           serviceId={selectedService.id}
-          serviceName={selectedService.name}
           serviceDuration={selectedService.durationHours}
           location={location}
         />

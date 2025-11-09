@@ -18,7 +18,8 @@
     "yes": "Yes",
     "no": "No",
     "hours": "hours",
-    "service": "service"
+    "service": "service", 
+    "continue": "Continue"
   },
   "navbar": {
     "brand": "Sparkle",
@@ -77,7 +78,18 @@
     "satisfactionGuaranteed": "Satisfaction Guaranteed",
     "satisfactionGuaranteedDesc": "Your happiness is our priority. If you're not satisfied, we'll make it right with our 100% satisfaction guarantee.",
     "exploreAllServices": "Explore All Services",
-    "noCleanersYet": "No cleaners available yet"
+    "noCleanersYet": "No cleaners available yet",
+    "customerReviews": "What Our Customers Say",
+    "customerReviewsSubtitle": "Real experiences from people who trust Sparkle for their cleaning needs",
+    "review1Text": "Absolutely fantastic service! The cleaner was professional, thorough, and my apartment has never looked better. Booking was so easy too!",
+    "review1Name": "Emma Virtanen",
+    "review1Location": "Helsinki",
+    "review2Text": "I've used Sparkle three times now and every experience has been excellent. Reliable, trustworthy cleaners and great customer service.",
+    "review2Name": "Mikko Laakso",
+    "review2Location": "Espoo",
+    "review3Text": "Best cleaning service I've found in Finland! They're always on time, do an amazing job, and the pricing is very fair. Highly recommend!",
+    "review3Name": "Sofia Mäkelä",
+    "review3Location": "Vantaa"
   },
   "services": {
     "simple-clean": {
@@ -327,10 +339,60 @@
     "loading": "Loading...",
     "pleaseLogin": "Please log in to see your profile."
   },
-  "cleanerSetup": {
-    "step": "Step",
-    "of": "of"
+    "cleanerSetup": {
+      "step": "Step",
+      "of": "of",
+      "step1": {
+        "title": "Set up your profile",
+        "fullNamePlaceholder": "Full name",
+        "usernamePlaceholder": "Username",
+        "fillAllFields": "Please fill in all fields and upload a photo.",
+        "uploading": "Uploading...",
+        "continue": "Continue",
+        "profilePic": "Upload a profile picture"
+      },
+      "step2": {
+        "title": "Set your hourly rate and services",
+        "hourlyRate": "Hourly rate (€)",
+        "pricePlaceholder": "Enter your price per hour",
+        "servicesOffered": "Services you offer",
+        "selectAll": "Select all",
+        "servicesSelected": "services selected",
+        "validPrice": "Please enter a valid hourly rate.",
+        "selectService": "Please select at least one service."
+      },
+      "step3": {
+        "title": "Set your availability",
+        "description": "Configure your weekly schedule and any exceptions (days off or extra shifts).",
+        "pleaseLogin": "Please log in to manage your availability.",
+        "continueToVerification": "Continue to Payment Setup"
+      },
+      "step4": {
+        "title": "Connect your bank account",
+        "description": "Set up secure payments to receive your earnings directly to your bank account.",
+        "howPaymentsWork": "How Payments Work",
+        "receive85": "You receive 85% of each booking (we keep 15% platform fee)",
+        "automaticPayouts": "Automatic payouts after completed jobs",
+        "securePayments": "Secure payments handled by Stripe",
+        "trackEarnings": "Track your earnings in the dashboard",
+        "note": "Note",
+        "redirectNote": "You will be redirected to Stripe to complete the setup. Make sure you have your bank details ready.",
+        "failedCreateAccount": "Failed to create Stripe account",
+        "failedOnboardingLink": "Failed to create onboarding link",
+        "failedConnectStripe": "Failed to connect Stripe",
+        "accountCreated": "Account created successfully! Redirecting to Stripe...",
+        "connectBankAccount": "Connect Bank Account",
+        "settingUpStripe": "Setting up Stripe...",
+        "skipForNow": "Skip for now (you can do this later)"
+      },
+      "step5": {
+        "title": "Add you documents",
+        "businessId": "Businees Id",
+        "pleaseLogin": "Please log in to manage your availability.",
+        "continueToVerification": "Continue to Payment Setup"
+      }
   },
+  
   "aboutPage": {
     "title": "About Sparkle",
     "subtitle": "Making trusted cleaning services simple, reliable, and accessible for everyone.",
@@ -501,7 +563,6 @@
     "bookedOn": "Booked on",
     "no": "No",
     "bookings": "bookings",
-    "pendingRequests": "pending requests",
     "newRequestsAppear": "New booking requests will appear here",
     "upcomingJobsAppear": "Your upcoming cleaning jobs will appear here",
     "completedAppear": "Completed jobs will appear here once you finish them",
@@ -666,7 +727,6 @@
   "ticketsTab": {
     "openTickets": "Open Tickets",
     "inProgress": "In Progress",
-    "resolved": "Resolved",
     "totalTickets": "Total Tickets",
     "allTickets": "All Tickets",
     "noTicketsFound": "No tickets found",
@@ -699,7 +759,6 @@
     "loadingDashboard": "Loading dashboard...",
     "overview": "Overview",
     "cleaners": "Cleaners",
-    "bookings": "Bookings",
     "users": "Users",
     "tickets": "Tickets",
     "totalBookings": "Total Bookings",
@@ -777,7 +836,19 @@
     "ticketSubmitted": "Ticket submitted successfully! Our team will review it soon.",
     "mustBeLoggedIn": "You must be logged in to submit a ticket",
     "fillAllFields": "Please fill in all required fields",
-    "failedToSubmit": "Failed to submit ticket. Please try again."
+    "failedToSubmit": "Failed to submit ticket. Please try again.",
+    "successModal": {
+      "title": "Ticket Submitted!",
+      "ticketNumber": "Your ticket number is:",
+      "estimatedResponse": "Estimated Response Time",
+      "basedOnPriority": "Based on {priority} priority",
+      "reviewMessage": "Our support team will review your ticket and get back to you as soon as possible. You'll receive an email notification when there's an update.",
+      "gotIt": "Got it, thanks!",
+      "urgent": "within 2-4 hours",
+      "high": "within 6-12 hours",
+      "medium": "within 24 hours",
+      "low": "within 48 hours"
+    }
   },
   "termsPage": {
     "title": "Terms of Service",

@@ -9,7 +9,7 @@ import Link from "next/link";
 import {
   Calendar,
   Bell,
-  DollarSign,
+  Euro,
   User,
   Clock,
   TrendingUp,
@@ -128,7 +128,7 @@ export default function CleanerDashboard() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {t('cleanerDashboard.welcomeBack')}, {cleanerName}!
+              {t('cleanerDashboard.welcomeBack')} {cleanerName}!
             </h1>
             <p className="text-gray-600">{t('cleanerDashboard.subtitle')}</p>
 
@@ -237,7 +237,7 @@ export default function CleanerDashboard() {
                   <p className="text-sm text-gray-600 mb-1">{t('cleanerDashboard.totalEarnings')}</p>
                   <p className="text-3xl font-bold text-green-600">€{stats.totalEarnings.toFixed(2)}</p>
                 </div>
-                <DollarSign className="w-10 h-10 text-green-600 opacity-80" />
+                <Euro className="w-10 h-10 text-green-600 opacity-80" />
               </div>
             </Link>
           </div>
@@ -310,7 +310,7 @@ export default function CleanerDashboard() {
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="bg-green-100 p-3 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                  <Euro className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{t('cleanerDashboard.earnings')}</h3>

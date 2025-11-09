@@ -5,7 +5,7 @@ import { db, auth } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, MessageSquare, Send, Loader2 } from "lucide-react";
+import { AlertTriangle, MessageSquare, Send, Loader2, CheckCircle, X } from "lucide-react";
 import { TicketType, TicketPriority, Ticket } from "../../types/ticket";
 
 export default function SupportPage() {
@@ -14,6 +14,7 @@ export default function SupportPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
+  const [successModal, setSuccessModal] = useState<{ show: boolean; ticketId: string; priority: TicketPriority } | null>(null);
 
   // Form state
   const [type, setType] = useState<TicketType>("complaint");
@@ -72,7 +73,7 @@ export default function SupportPage() {
 
     try {
       const ticketsRef = collection(db, "tickets");
-      await addDoc(ticketsRef, {
+      const docRef = await addDoc(ticketsRef, {
         userId: user.uid,
         userName: user.displayName || user.email || "Anonymous",
         userEmail: user.email || "",
@@ -87,6 +88,13 @@ export default function SupportPage() {
         updatedAt: serverTimestamp(),
       });
 
+      // Show success modal with ticket ID
+      setSuccessModal({
+        show: true,
+        ticketId: docRef.id,
+        priority: priority,
+      });
+
       // Reset form
       setSubject("");
       setDescription("");
@@ -96,8 +104,6 @@ export default function SupportPage() {
 
       // Refresh tickets
       await fetchMyTickets(user.uid);
-
-      alert("Ticket submitted successfully! Our team will review it soon.");
     } catch (err) {
       console.error("Error submitting ticket:", err);
       alert("Failed to submit ticket. Please try again.");
@@ -126,6 +132,21 @@ export default function SupportPage() {
     }
   };
 
+  const getEstimatedResponseTime = (priority: TicketPriority): string => {
+    switch (priority) {
+      case "urgent":
+        return "within 2-4 hours";
+      case "high":
+        return "within 6-12 hours";
+      case "medium":
+        return "within 24 hours";
+      case "low":
+        return "within 48 hours";
+      default:
+        return "within 24-48 hours";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -139,6 +160,57 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
+      {/* Success Modal */}
+      {successModal?.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-300">
+            <button
+              onClick={() => setSuccessModal(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Ticket Submitted!</h3>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-600 mb-2">Your ticket number is:</p>
+                <p className="text-2xl font-mono font-bold text-blue-600">
+                  #{successModal.ticketId.slice(-8).toUpperCase()}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 mb-1">Estimated Response Time</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {getEstimatedResponseTime(successModal.priority)}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Based on {successModal.priority} priority
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Our support team will review your ticket and get back to you as soon as possible.
+                You&apos;ll receive an email notification when there&apos;s an update.
+              </p>
+
+              <button
+                onClick={() => setSuccessModal(null)}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
