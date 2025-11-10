@@ -15,8 +15,10 @@ import {
   ConfirmationResult,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function AuthPage() {
+  const { t } = useLanguage();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +90,7 @@ export default function AuthPage() {
         await createUserDoc(user.uid);
 
         if (role === "cleaner") {
-          alert("Registration successful! Let's set up your profile.");
+          alert(t('auth.registrationSuccessful'));
           router.push("/cleaner/setup");
         } else if (role === "admin") {
           router.push("/admin/dashboard");
@@ -105,7 +107,7 @@ export default function AuthPage() {
         if (cleanerSnap.exists()) {
           const cleanerData = cleanerSnap.data();
           if (cleanerData?.status === "pending") {
-            alert("Your account is pending approval.");
+            alert(t('auth.accountPendingApproval'));
             return;
           }
           router.push("/cleaner-dashboard");
@@ -134,7 +136,7 @@ export default function AuthPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("An unexpected error occurred.");
+        setError(t('auth.unexpectedError'));
       }
     }
   };
@@ -143,17 +145,17 @@ export default function AuthPage() {
     setError("");
     setMessage("");
     if (!email) {
-      setError("Please enter your email first.");
+      setError(t('auth.enterEmail'));
       return;
     }
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("Password reset email sent! Check your inbox.");
+      setMessage(t('auth.passwordResetSent'));
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("An unexpected error occurred while sending reset email.");
+        setError(t('auth.passwordResetError'));
       }
     }
   };
@@ -214,7 +216,7 @@ export default function AuthPage() {
       if (cleanerSnap.exists()) {
         const cleanerData = cleanerSnap.data();
         if (cleanerData?.status === "pending") {
-          alert("Your account is pending approval.");
+          alert(t('auth.accountPendingApproval'));
           return;
         }
         router.push("/cleaner-dashboard");
@@ -235,7 +237,7 @@ export default function AuthPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("An unexpected error occurred during social login.");
+        setError(t('auth.socialLoginError'));
       }
     }
   };
@@ -276,7 +278,7 @@ export default function AuthPage() {
     setMessage("");
 
     if (!phoneNumber) {
-      setError("Please enter your phone number.");
+      setError(t('auth.enterPhoneNumber'));
       return;
     }
 
@@ -289,18 +291,18 @@ export default function AuthPage() {
       const appVerifier = windowWithRecaptcha.recaptchaVerifier;
 
       if (!appVerifier) {
-        setError("Failed to initialize reCAPTCHA. Please refresh and try again.");
+        setError(t('auth.recaptchaError'));
         return;
       }
 
       const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
       setConfirmationResult(confirmation);
-      setMessage("Verification code sent to your phone!");
+      setMessage(t('auth.verificationCodeSent'));
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Failed to send verification code.");
+        setError(t('auth.verificationCodeError'));
       }
     }
   };
@@ -310,12 +312,12 @@ export default function AuthPage() {
     setMessage("");
 
     if (!confirmationResult) {
-      setError("Please request a verification code first.");
+      setError(t('auth.requestCodeFirst'));
       return;
     }
 
     if (!verificationCode) {
-      setError("Please enter the verification code.");
+      setError(t('auth.enterVerificationCode'));
       return;
     }
 
@@ -369,7 +371,7 @@ export default function AuthPage() {
       if (cleanerSnap.exists()) {
         const cleanerData = cleanerSnap.data();
         if (cleanerData?.status === "pending") {
-          alert("Your account is pending approval.");
+          alert(t('auth.accountPendingApproval'));
           return;
         }
         router.push("/cleaner-dashboard");
@@ -390,7 +392,7 @@ export default function AuthPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Invalid verification code.");
+        setError(t('auth.invalidVerificationCode'));
       }
     }
   };
@@ -401,12 +403,12 @@ export default function AuthPage() {
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
         <h2 className="text-3xl font-bold mb-2 text-center text-primary-dark">
-          {isRegister ? "Register" : "Login"}
+          {isRegister ? t('auth.register') : t('auth.login')}
         </h2>
 
         {isRegister && !isAdminMode && (
           <p className="text-center text-sm mb-4 text-neutral">
-            Registering as <span className="font-semibold text-accent">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+            {t('auth.registeringAs')} <span className="font-semibold text-accent">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
           </p>
         )}
 
@@ -417,7 +419,7 @@ export default function AuthPage() {
           {isRegister && (
             <input
               type="text"
-              placeholder="Username"
+              placeholder={t('auth.username')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -427,7 +429,7 @@ export default function AuthPage() {
 
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('auth.email')}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -435,7 +437,7 @@ export default function AuthPage() {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t('auth.password')}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -446,7 +448,7 @@ export default function AuthPage() {
             type="submit"
             className="w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors shadow-md hover:shadow-lg"
           >
-            {isRegister ? "Register" : "Login"}
+            {isRegister ? t('auth.register') : t('auth.login')}
           </button>
         </form>
 
@@ -455,7 +457,7 @@ export default function AuthPage() {
             className="text-right mt-3 text-sm text-accent hover:text-accent-dark underline cursor-pointer font-medium"
             onClick={handleForgotPassword}
           >
-            Forgot your password?
+            {t('auth.forgotYourPassword')}
           </p>
         )}
 
@@ -465,7 +467,7 @@ export default function AuthPage() {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <span className="px-2 bg-white text-gray-500">{t('auth.orContinueWith')}</span>
           </div>
         </div>
 
@@ -496,7 +498,7 @@ export default function AuthPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span>{t('auth.continueWithGoogle')}</span>
             </button>
 
             {/* Apple Sign In - Commented out for later configuration */}
@@ -530,7 +532,7 @@ export default function AuthPage() {
                   d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                 />
               </svg>
-              <span>Continue with Phone</span>
+              <span>{t('auth.continueWithPhone')}</span>
             </button>
           </div>
         ) : (
@@ -540,7 +542,7 @@ export default function AuthPage() {
               <>
                 <input
                   type="tel"
-                  placeholder="Phone Number (e.g., +1234567890)"
+                  placeholder={t('auth.phoneNumberPlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -550,21 +552,21 @@ export default function AuthPage() {
                   type="button"
                   className="w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors"
                 >
-                  Send Verification Code
+                  {t('auth.sendVerificationCode')}
                 </button>
                 <button
                   onClick={() => setShowPhoneLogin(false)}
                   type="button"
                   className="w-full text-sm text-gray-600 hover:text-gray-800"
                 >
-                  ← Back to other options
+                  {t('auth.backToOtherOptions')}
                 </button>
               </>
             ) : (
               <>
                 <input
                   type="text"
-                  placeholder="Enter 6-digit code"
+                  placeholder={t('auth.enter6DigitCode')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-primary-dark text-center text-2xl tracking-widest"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
@@ -575,7 +577,7 @@ export default function AuthPage() {
                   type="button"
                   className="w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-accent-dark transition-colors"
                 >
-                  Verify Code
+                  {t('auth.verifyCode')}
                 </button>
                 <button
                   onClick={() => {
@@ -585,7 +587,7 @@ export default function AuthPage() {
                   type="button"
                   className="w-full text-sm text-gray-600 hover:text-gray-800"
                 >
-                  ← Resend Code
+                  {t('auth.resendCode')}
                 </button>
               </>
             )}
@@ -597,7 +599,7 @@ export default function AuthPage() {
 
         {isRegister && !isAdminMode && (
           <p className="text-center mt-4 text-sm text-primary-dark">
-            Register as{" "}
+            {t('auth.registerAs')}{" "}
             <span
               className="cursor-pointer underline text-accent hover:text-accent-dark font-semibold"
               onClick={() => setRole(alternateRole)}
@@ -608,12 +610,12 @@ export default function AuthPage() {
         )}
 
         <p className="text-center mt-4 text-primary-dark">
-          {isRegister ? "Already have an account?" : "Do not have an account?"}{" "}
+          {isRegister ? t('auth.alreadyHaveAccount') : t('auth.doNotHaveAccount')}{" "}
           <span
             className="text-accent hover:text-accent-dark underline cursor-pointer font-semibold"
             onClick={() => setIsRegister(!isRegister)}
           >
-            {isRegister ? "Login" : "Register"}
+            {isRegister ? t('auth.login') : t('auth.register')}
           </span>
         </p>
       </div>

@@ -272,7 +272,7 @@
 
 #### Email Delivery & Reliability
 - **Provider**: Resend (resend.com)
-- **Sender**: bookings@resend.dev (can be customized to verified domain)
+- **Sender**: bookings@sparcklecleaning.com (can be customized to verified domain)
 - **Triggered by**: Cloud Function on new booking creation (`sendBookingConfirmationEmails`)
 - **Error Handling**: Promise.allSettled to ensure both emails attempt sending
 - **Guest Email Fix**: Emails now use actual guest email from checkout form
@@ -553,7 +553,7 @@
 - **Rate Limits**: Free tier (100/day, 3,000/month)
 - **Email Types**: Transactional emails
 - **Templates**: HTML emails with inline CSS
-- **Sender**: bookings@resend.dev (customizable)
+- **Sender**: bookings@sparcklecleaning.com (customizable)
 
 ### 3.5 State Management
 
@@ -1357,7 +1357,7 @@ firebase functions:log --only sendBookingConfirmationEmails
 **Issue**: Emails not sending
 - **Solution**: Verify RESEND_API_KEY is set in Firebase secrets
 - Check Resend dashboard for errors
-- Verify sender email is bookings@resend.dev or verified domain
+- Verify sender email is bookings@sparcklecleaning.com or verified domain
 - Check Cloud Functions logs for errors
 
 ### 6.9 Git Workflow

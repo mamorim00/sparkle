@@ -201,7 +201,7 @@ Before going live:
 - [ ] Test emails received for bookings
 - [ ] Emails not going to spam
 - [ ] Consider verifying custom domain in Resend
-- [ ] Update email sender from `bookings@resend.dev` to your domain
+- [ ] Update email sender from `bookings@sparcklecleaning.com` to your domain
 
 ---
 

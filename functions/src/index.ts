@@ -619,13 +619,13 @@ export const sendBookingConfirmationEmails = functions.firestore.onDocumentCreat
 
       const results = await Promise.allSettled([
         resend.emails.send({
-          from: "Sparkle <bookings@resend.dev>",
+          from: "Sparkle <bookings@sparcklecleaning.com>",
           to: customerEmail,
           subject: customerSubject,
           html: customerEmailHtml,
         }),
         resend.emails.send({
-          from: "Sparkle <bookings@resend.dev>",
+          from: "Sparkle <bookings@sparcklecleaning.com>",
           to: cleanerEmail,
           subject: cleanerSubject,
           html: cleanerEmailHtml,
@@ -839,13 +839,13 @@ export const sendCancellationEmails = functions.firestore.onDocumentUpdated(
         // Send both emails
         const results = await Promise.allSettled([
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: customerEmail,
             subject: `🚫 Booking Cancelled - ${formattedDate}`,
             html: customerEmailHtml,
           }),
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: `⚠️ Booking Cancelled - ${formattedDate}`,
             html: cleanerEmailHtml,
@@ -1094,7 +1094,7 @@ export const sendBookingReminders = functions.scheduler.onSchedule(
         // Add emails to promise array
         emailPromises.push(
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: customerEmail,
             subject: `🔔 Reminder: Your Cleaning is Tomorrow - ${formattedDate}`,
             html: customerEmailHtml,
@@ -1103,7 +1103,7 @@ export const sendBookingReminders = functions.scheduler.onSchedule(
 
         emailPromises.push(
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: `🔔 Reminder: You Have a Job Tomorrow - ${formattedDate}`,
             html: cleanerEmailHtml,
@@ -1364,13 +1364,13 @@ export const sendReschedulingEmails = functions.firestore.onDocumentUpdated(
         // Send both emails
         const results = await Promise.allSettled([
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: customerEmail,
             subject: `🔄 Booking Rescheduled - ${newFormattedDate}`,
             html: customerEmailHtml,
           }),
           resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: `🔄 Schedule Update - ${newFormattedDate}`,
             html: cleanerEmailHtml,
@@ -1595,7 +1595,7 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
 
           // Send email
           await resend.emails.send({
-            from: "Sparkle <bookings@resend.dev>",
+            from: "Sparkle <bookings@sparcklecleaning.com>",
             to: customerEmail,
             subject: "⏰ Booking Request Expired - Full Refund Processed",
             html: customerEmailHtml,
@@ -1730,7 +1730,7 @@ export const sendCleanerStatusEmails = functions.firestore.onDocumentUpdated(
           `;
 
           await resend.emails.send({
-            from: "Sparkle <hello@resend.dev>",
+            from: "Sparkle <info@@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: "🎉 Congratulations! Your Sparkle Profile is Approved",
             html: approvalEmailHtml,
@@ -1810,7 +1810,7 @@ export const sendCleanerStatusEmails = functions.firestore.onDocumentUpdated(
           `;
 
           await resend.emails.send({
-            from: "Sparkle <hello@resend.dev>",
+            from: "Sparkle <info@@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: "Update on Your Sparkle Application",
             html: rejectionEmailHtml,

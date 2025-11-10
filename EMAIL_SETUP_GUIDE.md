@@ -76,7 +76,7 @@ vercel env add RESEND_API_KEY
 ## Step 4: Verify Domain in Resend (Optional but Recommended)
 
 ### For Testing (Use Immediately)
-- Use `bookings@resend.dev` as the sender (already configured)
+- Use `bookings@sparcklecleaning.com` as the sender (already configured)
 - No setup needed!
 
 ### For Production (Better Deliverability)
@@ -89,7 +89,7 @@ vercel env add RESEND_API_KEY
 
 ```typescript
 // Change this line (appears twice in the code):
-from: "Sparkle <bookings@resend.dev>",
+from: "Sparkle <bookings@sparcklecleaning.com>",
 
 // To your verified domain:
 from: "Sparkle <bookings@yourdomain.com>",
