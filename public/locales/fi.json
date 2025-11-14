@@ -177,11 +177,11 @@
     "requestCodeFirst": "Pyydä ensin vahvistuskoodi.",
     "invalidVerificationCode": "Virheellinen vahvistuskoodi.",
     "unexpectedError": "Odottamaton virhe tapahtui.",
-    "unexpectedErrorReset": "Odottamaton virhe tapahtui palautusviestiä lähettäessä.",
-    "unexpectedErrorSocial": "Odottamaton virhe tapahtui sosiaalisen median kirjautumisessa.",
+    "passwordResetError": "Odottamaton virhe tapahtui palautusviestiä lähettäessä.",
+    "socialLoginError": "Odottamaton virhe tapahtui sosiaalisen median kirjautumisessa.",
     "enterPhoneNumber": "Syötä puhelinnumerosi.",
-    "recaptchaFailed": "reCAPTCHA:n alustaminen epäonnistui. Päivitä sivu ja yritä uudelleen.",
-    "failedSendCode": "Vahvistuskoodin lähettäminen epäonnistui."
+    "recaptchaError": "reCAPTCHA:n alustaminen epäonnistui. Päivitä sivu ja yritä uudelleen.",
+    "verificationCodeError": "Vahvistuskoodin lähettäminen epäonnistui."
   },
   "dashboard": {
     "welcome": "Tervetuloa takaisin",

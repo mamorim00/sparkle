@@ -178,11 +178,11 @@
     "requestCodeFirst": "Please request a verification code first.",
     "invalidVerificationCode": "Invalid verification code.",
     "unexpectedError": "An unexpected error occurred.",
-    "unexpectedErrorReset": "An unexpected error occurred while sending reset email.",
-    "unexpectedErrorSocial": "An unexpected error occurred during social login.",
+    "passwordResetError": "An unexpected error occurred while sending reset email.",
+    "socialLoginError": "An unexpected error occurred during social login.",
     "enterPhoneNumber": "Please enter your phone number.",
-    "recaptchaFailed": "Failed to initialize reCAPTCHA. Please refresh and try again.",
-    "failedSendCode": "Failed to send verification code."
+    "recaptchaError": "Failed to initialize reCAPTCHA. Please refresh and try again.",
+    "verificationCodeError": "Failed to send verification code."
   },
   "dashboard": {
     "welcome": "Welcome back",

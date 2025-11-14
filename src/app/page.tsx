@@ -142,6 +142,7 @@ export default function HomePage() {
           collection(db, "cleaners"),
           where("status", "==", "approved"),
           where("location", "==", location),
+          where("stripeConnected", "==", true),
           limit(6)
         );
         const querySnapshot = await getDocs(q);

@@ -49,7 +49,8 @@ export default function ServiceBookingModal({
           collection(db, "cleaners"),
           where("status", "==", "approved"),
           where("location", "==", location),
-          where("services", "array-contains", serviceId)
+          where("services", "array-contains", serviceId),
+          where("stripeConnected", "==", true)
         );
         const snapshot = await getDocs(q);
 

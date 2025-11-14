@@ -1,0 +1,63 @@
+[debug] [2025-11-13T08:23:59.799Z] ----------------------------------------------------------------------
+[debug] [2025-11-13T08:23:59.803Z] Command:       /Users/amorimm1/.nvm/versions/node/v22.14.0/bin/node /Users/amorimm1/.nvm/versions/node/v22.14.0/bin/firebase deploy --only firestore:indexes
+[debug] [2025-11-13T08:23:59.804Z] CLI Version:   14.17.0
+[debug] [2025-11-13T08:23:59.804Z] Platform:      darwin
+[debug] [2025-11-13T08:23:59.804Z] Node Version:  v22.14.0
+[debug] [2025-11-13T08:23:59.805Z] Time:          Thu Nov 13 2025 10:23:59 GMT+0200 (Eastern European Standard Time)
+[debug] [2025-11-13T08:23:59.805Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-13T08:23:59.807Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2025-11-13T08:24:00.093Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-13T08:24:00.093Z] > authorizing via signed-in user (marinamartinsamorim@gmail.com)
+[debug] [2025-11-13T08:24:00.093Z] [iam] checking project sparkle-86740 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2025-11-13T08:24:00.094Z] Checked if tokens are valid: false, expires at: 1762764109897
+[debug] [2025-11-13T08:24:00.094Z] Checked if tokens are valid: false, expires at: 1762764109897
+[debug] [2025-11-13T08:24:00.094Z] > refreshing access token with scopes: []
+[debug] [2025-11-13T08:24:00.096Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-11-13T08:24:00.096Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-13T08:24:00.308Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-11-13T08:24:00.309Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-13T08:24:00.365Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/sparkle-86740:testIamPermissions [none]
+[debug] [2025-11-13T08:24:00.365Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/sparkle-86740:testIamPermissions x-goog-quota-user=projects/sparkle-86740
+[debug] [2025-11-13T08:24:00.365Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/sparkle-86740:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2025-11-13T08:24:00.538Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-11-13T08:24:00.538Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2025-11-13T08:24:01.298Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/sparkle-86740:testIamPermissions 200
+[debug] [2025-11-13T08:24:01.298Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/sparkle-86740:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'sparkle-86740'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2025-11-13T08:24:01.305Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:01.305Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:01.306Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/sparkle-86740:test [none]
+[debug] [2025-11-13T08:24:01.306Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/sparkle-86740:test [omitted]
+[debug] [2025-11-13T08:24:02.322Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/sparkle-86740:test 200
+[debug] [2025-11-13T08:24:02.322Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/sparkle-86740:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2025-11-13T08:24:02.323Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.323Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.323Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) [none]
+[debug] [2025-11-13T08:24:02.646Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) 200
+[debug] [2025-11-13T08:24:02.646Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) {"name":"projects/sparkle-86740/databases/(default)","uid":"8f72b982-c3e3-4f43-a2e2-bb4c3d16e901","createTime":"2025-09-19T12:54:35.447950Z","updateTime":"2025-09-19T12:54:35.447950Z","locationId":"europe-north2","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-11-13T07:24:02.662499Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"ILyMhdTZ7pADMKqezZWk7I8D"}
+[info] i  firestore: deploying indexes... 
+[debug] [2025-11-13T08:24:02.649Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.649Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.649Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/indexes [none]
+[debug] [2025-11-13T08:24:02.751Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/indexes 200
+[debug] [2025-11-13T08:24:02.751Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/sparkle-86740/databases/(default)/collectionGroups/bookings/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"cleanerId","order":"ASCENDING"},{"fieldPath":"end","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/sparkle-86740/databases/(default)/collectionGroups/bookings/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
+[debug] [2025-11-13T08:24:02.752Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.752Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.752Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
+[debug] [2025-11-13T08:24:02.832Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
+[debug] [2025-11-13T08:24:02.833Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/sparkle-86740/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
+[debug] [2025-11-13T08:24:02.833Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.833Z] Checked if tokens are valid: true, expires at: 1763025839309
+[debug] [2025-11-13T08:24:02.833Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) [none]
+[debug] [2025-11-13T08:24:02.893Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) 200
+[debug] [2025-11-13T08:24:02.894Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/sparkle-86740/databases/(default) {"name":"projects/sparkle-86740/databases/(default)","uid":"8f72b982-c3e3-4f43-a2e2-bb4c3d16e901","createTime":"2025-09-19T12:54:35.447950Z","updateTime":"2025-09-19T12:54:35.447950Z","locationId":"europe-north2","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-11-13T07:24:02.911748Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IL6olNTZ7pADMKqezZWk7I8D"}
+[info] i  firestore: The following indexes are defined in your project but are not present in your firestore indexes file:
+	(bookings) -- (cleanerId,ASCENDING) (end,ASCENDING)  -- Density:SPARSE_ALL 
+	(bookings) -- (userId,ASCENDING) (date,DESCENDING)  -- Density:SPARSE_ALL  

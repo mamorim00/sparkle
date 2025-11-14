@@ -57,6 +57,7 @@ export async function findAlternativeCleaners(
       .where("status", "==", "approved")
       .where("location", "==", location)
       .where("services", "array-contains", serviceType)
+      .where("stripeConnected", "==", true)
       .get();
 
     const potentialCleaners: Cleaner[] = cleanersQuery.docs

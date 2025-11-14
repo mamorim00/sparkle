@@ -56,6 +56,7 @@ export default function CleanersClient() {
         const conditions = [
           where("location", "==", location),
           where("status", "==", "approved"),
+          where("stripeConnected", "==", true),
         ];
         if (serviceId) conditions.push(where("services", "array-contains", serviceId));
 

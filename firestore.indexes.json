@@ -1,4 +1,34 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "cleaners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "location", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stripeConnected", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cleaners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "location", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stripeConnected", "order": "ASCENDING" },
+        { "fieldPath": "services", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "cleaners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "location", "order": "ASCENDING" },
+        { "fieldPath": "services", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "stripeConnected", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }
