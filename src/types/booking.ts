@@ -31,6 +31,13 @@ export interface Booking {
   rejectedAt?: string; // when cleaner rejected
   rejectionReason?: string; // optional reason for rejection
 
+  // MVP-specific fields (Book now, pay later)
+  confirmationToken?: string; // Token for cleaner confirmation
+  confirmationMethod?: string | null; // How cleaner confirmed (email/dashboard/whatsapp)
+  cleanerConfirmedAt?: string | null; // When cleaner confirmed
+  cleanerInvoiced?: boolean; // Whether cleaner sent invoice to customer
+  clientPaid?: boolean; // Whether customer paid the invoice
+
   // Cancellation fields
   cancelledAt?: string;
   cancelledBy?: string;
@@ -56,12 +63,13 @@ export interface Booking {
 }
 
 export type BookingStatus =
-  | "pending_acceptance" // Customer paid, awaiting cleaner acceptance
-  | "confirmed"          // Cleaner accepted, booking confirmed
-  | "completed"          // Service completed
-  | "cancelled"          // Cancelled by customer or cleaner
-  | "rejected"           // Cleaner rejected the request
-  | "expired";           // Request expired (cleaner didn't respond in time)
+  | "pending_acceptance"           // Customer paid (Stripe), awaiting cleaner acceptance
+  | "pending_cleaner_confirmation" // MVP: No payment yet, awaiting cleaner confirmation
+  | "confirmed"                    // Cleaner accepted, booking confirmed
+  | "completed"                    // Service completed
+  | "cancelled"                    // Cancelled by customer or cleaner
+  | "rejected"                     // Cleaner rejected the request
+  | "expired";                     // Request expired (cleaner didn't respond in time)
 
 export type PayoutStatus = "pending" | "paid" | "failed";
 export type RefundStatus = "none" | "pending" | "partial" | "full" | "failed";

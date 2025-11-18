@@ -96,20 +96,36 @@ const CleanerSchedule = forwardRef<CleanerScheduleRef, CleanerScheduleProps>(({ 
 
   // Save to Firestore
   const saveSchedule = async () => {
+    if (!cleanerId) {
+      console.error("No cleanerId provided");
+      setSaveMessage({ type: 'error', text: 'User not authenticated. Please log in.' });
+      return;
+    }
+
     setSaving(true);
     setSaveMessage(null);
+
     try {
+      console.log("Saving schedule for cleaner:", cleanerId);
+      console.log("Schedule data:", schedule);
+      console.log("Exceptions data:", exceptions);
+
       const cleanerRef = doc(db, "cleaners", cleanerId);
-      // Use setDoc with merge to create the document if it doesn't exist
+
+      // Use setDoc with merge to update/create the document
       await setDoc(cleanerRef, {
         schedule,
         exceptions,
+        updatedAt: new Date().toISOString(),
       }, { merge: true });
+
+      console.log("Schedule saved successfully!");
       setSaveMessage({ type: 'success', text: 'Schedule saved successfully!' });
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
       console.error("Error saving schedule:", err);
-      setSaveMessage({ type: 'error', text: 'Failed to save schedule. Please try again.' });
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setSaveMessage({ type: 'error', text: `Failed to save schedule: ${errorMessage}` });
     } finally {
       setSaving(false);
     }

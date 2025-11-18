@@ -63,13 +63,22 @@ export default function CleanerDashboard() {
         // Fetch cleaner stats
         const bookingsRef = collection(db, "bookings");
 
-        // Pending requests
-        const pendingQuery = query(
+        // Pending requests (both old and new flow)
+        const pendingAcceptanceQuery = query(
           bookingsRef,
           where("cleanerId", "==", uid),
           where("status", "==", "pending_acceptance")
         );
-        const pendingSnapshot = await getDocs(pendingQuery);
+        const pendingAcceptanceSnapshot = await getDocs(pendingAcceptanceQuery);
+
+        const pendingCleanerConfirmationQuery = query(
+          bookingsRef,
+          where("cleanerId", "==", uid),
+          where("status", "==", "pending_cleaner_confirmation")
+        );
+        const pendingCleanerConfirmationSnapshot = await getDocs(pendingCleanerConfirmationQuery);
+
+        const totalPendingRequests = pendingAcceptanceSnapshot.size + pendingCleanerConfirmationSnapshot.size;
 
         // Upcoming bookings (confirmed)
         const upcomingQuery = query(
@@ -95,7 +104,7 @@ export default function CleanerDashboard() {
         });
 
         setStats({
-          pendingRequests: pendingSnapshot.size,
+          pendingRequests: totalPendingRequests,
           upcomingBookings: upcomingSnapshot.size,
           completedBookings: completedSnapshot.size,
           totalEarnings,

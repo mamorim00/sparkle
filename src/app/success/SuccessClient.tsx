@@ -33,11 +33,14 @@ interface Booking {
   id: string;
   amount: number;
   cleanerName: string;
+  cleanerId?: string;
   date: string;
   start: string;
   end: string;
   cleaningType: string;
   status: string;
+  customerEmail?: string;
+  customerName?: string;
 }
 
 export default function SuccessClient() {
@@ -51,7 +54,7 @@ export default function SuccessClient() {
   const bookingFoundRef = useRef(false);
 
   useEffect(() => {
-    const id = searchParams.get("session_id");
+    const id = searchParams.get("session_id") || searchParams.get("booking_id");
     if (id) setSessionId(id);
     else setLoading(false);
   }, [searchParams]);
@@ -64,7 +67,44 @@ export default function SuccessClient() {
 
     const fetchSessionAndWaitForBooking = async () => {
       try {
-        // Fetch Stripe session details
+        // Check if this is a direct booking (has booking_id param) or Stripe session
+        const isDirectBooking = searchParams.get("booking_id") !== null;
+
+        if (isDirectBooking) {
+          // Direct booking - just fetch from Firestore
+          const bookingRef = doc(db, "bookings", sessionId);
+          const bookingSnap = await getDoc(bookingRef);
+
+          if (bookingSnap.exists()) {
+            const bookingData = bookingSnap.data() as Booking;
+            setBooking(bookingData);
+            // Create minimal session data for display
+            setSession({
+              id: sessionId,
+              amount_total: bookingData.amount * 100,
+              currency: "eur",
+              customer_details: {
+                email: bookingData.customerEmail,
+                name: bookingData.customerName,
+              },
+              metadata: {
+                cleanerId: bookingData.cleanerId,
+                date: bookingData.date,
+                start: bookingData.start,
+                end: bookingData.end,
+                cleaningType: bookingData.cleaningType,
+                guestName: bookingData.customerName,
+                guestEmail: bookingData.customerEmail,
+              },
+            } as StripeSession);
+            setLoading(false);
+            return;
+          } else {
+            throw new Error("Booking not found");
+          }
+        }
+
+        // Original Stripe flow
         const res = await fetch(`/api/get-checkout-session?session_id=${sessionId}`);
         if (!res.ok) throw new Error("Network response not ok");
         const data: StripeSession = await res.json();
@@ -182,15 +222,35 @@ export default function SuccessClient() {
     );
   }
 
+  // Check if this is pending confirmation
+  const isPendingConfirmation = booking?.status === "pending_cleaner_confirmation";
+
   return (
     <div className="max-w-xl mx-auto p-6 text-center">
-      <h1 className="text-2xl font-bold text-green-600 mb-4">{t('success.paymentSuccessful')} 🎉</h1>
+      <h1 className="text-2xl font-bold text-green-600 mb-4">
+        {isPendingConfirmation ? "⏳ Booking Request Sent!" : "🎉 " + t('success.paymentSuccessful')}
+      </h1>
       <p className="mb-2">
-        {t('success.thankYouBooking')} <b>{session.metadata?.guestName || session.customer_details?.name || ""}</b>!
+        {isPendingConfirmation
+          ? `Thank you, ${session.metadata?.guestName || session.customer_details?.name || ""}! Your booking request has been sent to the cleaner.`
+          : `${t('success.thankYouBooking')} ${session.metadata?.guestName || session.customer_details?.name || ""}!`
+        }
       </p>
-      <p className="mb-2">
-        {t('success.receivedPayment')} <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
-      </p>
+
+      {isPendingConfirmation && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-800">
+            <strong>Awaiting Cleaner Confirmation</strong><br/>
+            The cleaner will be notified and will confirm your booking soon. You&apos;ll receive an email with further instructions and an invoice.
+          </p>
+        </div>
+      )}
+
+      {!isPendingConfirmation && (
+        <p className="mb-2">
+          {t('success.receivedPayment')} <b>{(session.amount_total / 100).toFixed(2)} {session.currency.toUpperCase()}</b>.
+        </p>
+      )}
 
       {booking && (
         <div className="mt-6 p-4 bg-gray-100 rounded-lg">
@@ -200,7 +260,14 @@ export default function SuccessClient() {
             <p><strong>{t('success.service')}:</strong> {booking.cleaningType}</p>
             <p><strong>{t('success.date')}:</strong> {booking.date}</p>
             <p><strong>{t('success.time')}:</strong> {booking.start} - {booking.end}</p>
-            <p><strong>{t('success.status')}:</strong> <span className="text-green-600 font-semibold">{booking.status}</span></p>
+            <p><strong>{t('success.status')}:</strong>
+              <span className={`font-semibold ${isPendingConfirmation ? 'text-yellow-600' : 'text-green-600'}`}>
+                {isPendingConfirmation ? "Pending Confirmation" : booking.status}
+              </span>
+            </p>
+            {!isPendingConfirmation && (
+              <p><strong>Amount:</strong> €{booking.amount.toFixed(2)}</p>
+            )}
           </div>
         </div>
       )}
@@ -208,7 +275,7 @@ export default function SuccessClient() {
       <p className="mb-2 mt-4">
         {t('success.confirmationSent')} <b>{session.customer_details?.email}</b>.
       </p>
-      {session.receipt_url && (
+      {session.receipt_url && !isPendingConfirmation && (
         <a
           href={session.receipt_url}
           target="_blank"

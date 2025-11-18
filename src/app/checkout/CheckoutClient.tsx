@@ -163,7 +163,6 @@ export default function CheckoutClient() {
     setLoading(true);
 
     const checkoutPayload = {
-      totalAmount: bookingDetails.totalPrice,
       bookingDetails: {
         cleanerId: bookingDetails.cleanerId,
         cleanerName: bookingDetails.cleanerName,
@@ -172,6 +171,7 @@ export default function CheckoutClient() {
         end: bookingDetails.end,
         duration: bookingDetails.duration,
         cleaningType: bookingDetails.cleaningType,
+        totalPrice: bookingDetails.totalPrice,
       },
       userId: currentUser ? currentUser.uid : null,
       userName: currentUser ? (currentUser.displayName || currentUser.email) : contactData.name,
@@ -180,7 +180,7 @@ export default function CheckoutClient() {
     };
 
     try {
-      const response = await fetch("/api/create-checkout-session", {
+      const response = await fetch("/api/create-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkoutPayload),
@@ -188,11 +188,12 @@ export default function CheckoutClient() {
 
       const parsed = await response.json();
       if (parsed.error) throw new Error(parsed.error);
-      if (!parsed.url) throw new Error("Checkout URL missing from server response.");
+      if (!parsed.bookingId) throw new Error("Booking ID missing from server response.");
 
-      window.location.href = parsed.url;
+      // Redirect to success page with booking ID
+      router.push(`/success?booking_id=${parsed.bookingId}`);
     } catch (err: unknown) {
-      setError(`Payment failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setError(`Booking failed: ${err instanceof Error ? err.message : "Unknown error"}`);
       setLoading(false);
     }
   };
@@ -484,14 +485,14 @@ export default function CheckoutClient() {
             </span>
           ) : (
             <>
-              {t('checkoutPage.payNowWithStripe')}
-              <Lock className="w-5 h-5 ml-2" />
+              Confirm Booking
+              <Zap className="w-5 h-5 ml-2" />
             </>
           )}
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-4">
-          {t('checkoutPage.securedByStripe')}
+          Cleaner will send you an invoice after confirming
         </p>
       </div>
     </div>

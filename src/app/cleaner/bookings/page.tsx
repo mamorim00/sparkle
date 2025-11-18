@@ -22,7 +22,7 @@ interface Booking {
   platformFee: number;
   cleanerAmount: number;
   currency: string;
-  status: "pending_acceptance" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
+  status: "pending_acceptance" | "pending_cleaner_confirmation" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
   createdAt: string;
   duration: number;
   completedAt?: string;
@@ -148,13 +148,14 @@ export default function CleanerBookingsPage() {
   // Use a stable "now" value to prevent hydration issues
   const now = mounted ? new Date() : new Date(0);
 
-  // Pending requests awaiting acceptance
-  const pendingRequests = bookings.filter((b) => b.status === "pending_acceptance")
-    .sort((a, b) => {
-      const expiresA = new Date(a.requestExpiresAt || 0).getTime();
-      const expiresB = new Date(b.requestExpiresAt || 0).getTime();
-      return expiresA - expiresB; // Most urgent first
-    });
+  // Pending requests awaiting acceptance (both old and new flow)
+  const pendingRequests = bookings.filter((b) =>
+    b.status === "pending_acceptance" || b.status === "pending_cleaner_confirmation"
+  ).sort((a, b) => {
+    const expiresA = new Date(a.requestExpiresAt || 0).getTime();
+    const expiresB = new Date(b.requestExpiresAt || 0).getTime();
+    return expiresA - expiresB; // Most urgent first
+  });
 
   const upcomingBookings = bookings.filter((b) => {
     if (!mounted) return b.status === "confirmed"; // Before mount, show all confirmed

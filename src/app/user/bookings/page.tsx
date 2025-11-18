@@ -18,7 +18,7 @@ interface Booking {
   end: string;
   cleaningType: string;
   amount: number;
-  status: "pending_acceptance" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
+  status: "pending_acceptance" | "pending_cleaner_confirmation" | "confirmed" | "cancelled" | "completed" | "rejected" | "expired";
   createdAt: string;
   duration: number;
   requestExpiresAt?: string;
@@ -79,6 +79,7 @@ export default function UserBookingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending_acceptance":
+      case "pending_cleaner_confirmation":
         return "bg-orange-100 text-orange-800";
       case "confirmed":
         return "bg-blue-100 text-blue-800";
@@ -98,6 +99,7 @@ export default function UserBookingsPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending_acceptance":
+      case "pending_cleaner_confirmation":
         return "⏳";
       case "confirmed":
         return "✓";
@@ -117,17 +119,19 @@ export default function UserBookingsPage() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending_acceptance":
-        return t('userBookings.statusAwaitingConfirmation');
+        return t('userBookingsPage.statusAwaitingConfirmation');
+      case "pending_cleaner_confirmation":
+        return t('userBookingsPage.statusAwaitingCleanerConfirmation');
       case "confirmed":
-        return t('userBookings.statusConfirmed');
+        return t('userBookingsPage.statusConfirmed');
       case "completed":
-        return t('userBookings.statusCompleted');
+        return t('userBookingsPage.statusCompleted');
       case "cancelled":
-        return t('userBookings.statusCancelled');
+        return t('userBookingsPage.statusCancelled');
       case "rejected":
-        return t('userBookings.statusRejected');
+        return t('userBookingsPage.statusRejected');
       case "expired":
-        return t('userBookings.statusExpired');
+        return t('userBookingsPage.statusExpired');
       default:
         return status;
     }
@@ -171,7 +175,12 @@ export default function UserBookingsPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const pendingBookings = bookings.filter((b) => b.status === "pending_acceptance");
+  const pendingBookings = bookings.filter((b) => {
+    const isPendingStatus = b.status === "pending_acceptance" || b.status === "pending_cleaner_confirmation";
+    const bookingDateTime = new Date(`${b.date}T${b.start}`);
+    const isFutureBooking = bookingDateTime > new Date();
+    return isPendingStatus && isFutureBooking;
+  });
   const upcomingBookings = bookings.filter((b) => new Date(b.date) >= today && b.status === "confirmed");
   const pastBookings = bookings.filter(
     (b) =>
@@ -273,7 +282,11 @@ export default function UserBookingsPage() {
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">€{booking.amount.toFixed(2)}</p>
                       <p className="text-sm text-gray-500">{booking.duration}h {t('common.service')}</p>
-                      <p className="text-xs text-orange-600 mt-1 font-semibold">{t('userBookings.paymentHeld')}</p>
+                      {booking.status === "pending_acceptance" ? (
+                        <p className="text-xs text-orange-600 mt-1 font-semibold">{t('userBookingsPage.paymentHeld')}</p>
+                      ) : (
+                        <p className="text-xs text-blue-600 mt-1 font-semibold">{t('userBookingsPage.payAfterService')}</p>
+                      )}
                     </div>
                   </div>
 
@@ -292,7 +305,7 @@ export default function UserBookingsPage() {
 
                   <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <p className="text-sm text-orange-900">
-                      <strong>⏳ {t('userBookings.awaitingCleanerConfirmation')}</strong> {t('userBookings.awaitingDescription')}
+                      <strong>⏳ {t('userBookingsPage.awaitingCleanerConfirmation')}</strong> {booking.status === "pending_acceptance" ? t('userBookingsPage.awaitingDescription') : t('userBookingsPage.awaitingDescriptionMVP')}
                     </p>
                   </div>
 

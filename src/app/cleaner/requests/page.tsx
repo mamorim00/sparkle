@@ -1,423 +1,307 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import Link from "next/link";
-import { Calendar, Clock, DollarSign, User as UserIcon, AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import type { Booking } from "../../../types/booking";
-import { useLanguage } from "../../../context/LanguageContext";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { Check, X, Clock, Mail, Calendar, User as UserIcon } from "lucide-react";
+
+interface BookingRequest {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  cleaningType: string;
+  date: string;
+  start: string;
+  end: string;
+  duration: number;
+  amount: number;
+  status: string;
+  createdAt: string;
+  requestExpiresAt: string;
+  confirmationToken: string;
+}
 
 export default function CleanerRequestsPage() {
-  const { t } = useLanguage();
-  const [user, setUser] = useState<User | null>(null);
-  const [pendingRequests, setPendingRequests] = useState<Booking[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
+  const [cleanerId, setCleanerId] = useState<string | null>(null);
+  const [requests, setRequests] = useState<BookingRequest[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
+  // Check authentication and get cleaner ID
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        await fetchPendingRequests(currentUser.uid);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/login?redirect=/cleaner/requests");
+        return;
+      }
+
+      // Check if cleaner profile exists (document ID = user UID)
+      const cleanerDocRef = doc(db, "cleaners", user.uid);
+      const cleanerDoc = await getDoc(cleanerDocRef);
+
+      if (!cleanerDoc.exists()) {
+        // Try alternative: find by userId field
+        const cleanersQuery = query(
+          collection(db, "cleaners"),
+          where("userId", "==", user.uid)
+        );
+        const cleanersSnapshot = await getDocs(cleanersQuery);
+
+        if (cleanersSnapshot.empty) {
+          setError("No cleaner profile found. Please complete your cleaner setup.");
+          setLoading(false);
+          return;
+        }
+
+        const altCleanerDoc = cleanersSnapshot.docs[0];
+        setCleanerId(altCleanerDoc.id);
+        await fetchPendingRequests(altCleanerDoc.id);
       } else {
-        setUser(null);
-        setLoading(false);
+        // Use user UID as cleaner ID (standard pattern)
+        setCleanerId(user.uid);
+        await fetchPendingRequests(user.uid);
       }
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const fetchPendingRequests = async (cleanerId: string) => {
-    setLoading(true);
     try {
-      const q = query(
+      const bookingsQuery = query(
         collection(db, "bookings"),
         where("cleanerId", "==", cleanerId),
-        where("status", "==", "pending_acceptance")
+        where("status", "==", "pending_cleaner_confirmation")
       );
 
-      const querySnapshot = await getDocs(q);
-      const requests: Booking[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Booking));
+      const bookingsSnapshot = await getDocs(bookingsQuery);
+      const bookingRequests: BookingRequest[] = [];
 
-      // Sort by expiration time (most urgent first)
-      requests.sort((a, b) => {
-        const expiresA = new Date(a.requestExpiresAt || 0).getTime();
-        const expiresB = new Date(b.requestExpiresAt || 0).getTime();
-        return expiresA - expiresB;
-      });
+      for (const doc of bookingsSnapshot.docs) {
+        const data = doc.data();
 
-      setPendingRequests(requests);
-    } catch (error) {
-      console.error("Error fetching pending requests:", error);
-    } finally {
+        // Check if not expired AND booking is in the future
+        const now = new Date();
+        const expiresAt = new Date(data.requestExpiresAt);
+        const bookingDateTime = new Date(`${data.date}T${data.start}`);
+
+        if (now < expiresAt && bookingDateTime > now) {
+          bookingRequests.push({
+            id: doc.id,
+            ...data,
+          } as BookingRequest);
+        }
+      }
+
+      // Sort by creation date (newest first)
+      bookingRequests.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setRequests(bookingRequests);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+      setError("Failed to load booking requests");
       setLoading(false);
     }
   };
 
-  const handleAccept = async (booking: Booking) => {
-    if (!user) return;
+  const handleConfirmation = async (bookingId: string, token: string, action: "accept" | "reject") => {
+    if (!cleanerId) return;
 
-    setProcessingId(booking.id);
+    setConfirmingId(bookingId);
+    setError("");
+
     try {
-      const response = await fetch("/api/bookings/respond", {
+      const response = await fetch("/api/confirm-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "accept",
-          bookingId: booking.id,
-          cleanerId: user.uid,
+          token: token,
+          action: action,
+          method: "dashboard",
+          cleanerId: cleanerId,
         }),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
-      if (result.success) {
-        alert(`✅ ${t('cleanerRequests.bookingAccepted')}`);
-        // Refresh the list
-        await fetchPendingRequests(user.uid);
-      } else {
-        alert(`❌ Error: ${result.message}`);
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to confirm booking");
       }
-    } catch (error) {
-      console.error("Error accepting booking:", error);
-      alert(`❌ ${t('cleanerRequests.failedToAccept')}`);
+
+      // Remove from list on success
+      setRequests(prev => prev.filter(req => req.id !== bookingId));
+
+      // Show success message
+      alert(data.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setProcessingId(null);
+      setConfirmingId(null);
     }
-  };
-
-  const handleReject = async () => {
-    if (!user || !selectedBooking) return;
-
-    setProcessingId(selectedBooking.id);
-    try {
-      const response = await fetch("/api/bookings/respond", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reject",
-          bookingId: selectedBooking.id,
-          cleanerId: user.uid,
-          reason: rejectionReason || "Not available",
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(`✅ ${t('cleanerRequests.bookingRejected')}`);
-        setShowRejectModal(false);
-        setRejectionReason("");
-        setSelectedBooking(null);
-        // Refresh the list
-        await fetchPendingRequests(user.uid);
-      } else {
-        alert(`❌ Error: ${result.message}`);
-      }
-    } catch (error) {
-      console.error("Error rejecting booking:", error);
-      alert(`❌ ${t('cleanerRequests.failedToReject')}`);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const openRejectModal = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setShowRejectModal(true);
-  };
-
-  const closeRejectModal = () => {
-    setShowRejectModal(false);
-    setSelectedBooking(null);
-    setRejectionReason("");
-  };
-
-  const getTimeRemaining = (expiresAt?: string) => {
-    if (!expiresAt) return "Unknown";
-
-    const now = new Date().getTime();
-    const expires = new Date(expiresAt).getTime();
-    const diff = expires - now;
-
-    if (diff <= 0) return "Expired";
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const isUrgent = (expiresAt?: string) => {
-    if (!expiresAt) return false;
-    const now = new Date().getTime();
-    const expires = new Date(expiresAt).getTime();
-    const diff = expires - now;
-    return diff > 0 && diff < 2 * 60 * 60 * 1000; // Less than 2 hours
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-lg mt-4 text-gray-600">{t('cleanerRequests.loadingRequests')}</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-indigo-600"></div>
+          <p className="text-lg mt-4 text-gray-600">Loading booking requests...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (error && !requests.length) {
     return (
-      <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-lg rounded-xl text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('cleanerRequests.pleaseLogIn')}</h2>
-        <p className="text-gray-600 mb-6">{t('cleanerRequests.needLoggedInCleaner')}</p>
-        <Link
-          href="/auth/login"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-        >
-          {t('cleanerRequests.goToLogin')}
-        </Link>
+      <div className="max-w-2xl mx-auto p-6 mt-10">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h1 className="text-xl font-bold text-red-700">Error</h1>
+          <p className="text-red-600 mt-2">{error}</p>
+          <button
+            onClick={() => router.push("/cleaner-dashboard")}
+            className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+          >
+            Go to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('cleanerRequests.title')}</h1>
-          <p className="text-gray-600">{t('cleanerRequests.subtitle')}</p>
+    <div className="max-w-4xl mx-auto p-6 py-12">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Requests</h1>
+      <p className="text-gray-600 mb-8">Review and respond to customer booking requests</p>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700">{error}</p>
         </div>
+      )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">{t('cleanerRequests.pendingRequests')}</p>
-                <p className="text-3xl font-bold text-orange-600">{pendingRequests.length}</p>
-              </div>
-              <AlertCircle className="w-10 h-10 text-orange-600" />
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">{t('cleanerRequests.urgent')}</p>
-                <p className="text-3xl font-bold text-red-600">
-                  {pendingRequests.filter((r) => isUrgent(r.requestExpiresAt)).length}
-                </p>
-              </div>
-              <Clock className="w-10 h-10 text-red-600" />
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">{t('cleanerRequests.potentialEarnings')}</p>
-                <p className="text-3xl font-bold text-green-600">
-                  €{pendingRequests.reduce((sum, r) => sum + (r.cleanerAmount || 0), 0).toFixed(2)}
-                </p>
-              </div>
-              <DollarSign className="w-10 h-10 text-green-600" />
-            </div>
-          </div>
+      {requests.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+          <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">No Pending Requests</h2>
+          <p className="text-gray-600">You don&apos;t have any booking requests at the moment.</p>
+          <button
+            onClick={() => router.push("/cleaner-dashboard")}
+            className="mt-6 bg-indigo-600 text-white py-2 px-6 rounded-lg hover:bg-indigo-700"
+          >
+            Go to Dashboard
+          </button>
         </div>
+      ) : (
+        <div className="space-y-6">
+          {requests.map((request) => {
+            const expiresAt = new Date(request.requestExpiresAt);
+            const hoursUntilExpiry = Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)));
+            const bookingDate = new Date(request.date);
+            const formattedDate = bookingDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
 
-        {/* Pending Requests List */}
-        {pendingRequests.length > 0 ? (
-          <div className="space-y-4">
-            {pendingRequests.map((request) => {
-              const timeRemaining = getTimeRemaining(request.requestExpiresAt);
-              const urgent = isUrgent(request.requestExpiresAt);
-              const isProcessing = processingId === request.id;
+            return (
+              <div key={request.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{request.cleaningType}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      <Clock className="inline w-4 h-4 mr-1" />
+                      Expires in {hoursUntilExpiry} hour{hoursUntilExpiry !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <span className="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full font-medium">
+                    Pending
+                  </span>
+                </div>
 
-              return (
-                <div
-                  key={request.id}
-                  className={`bg-white rounded-xl shadow-sm p-6 border-2 transition-all ${
-                    urgent ? "border-red-400 bg-red-50" : "border-orange-300 bg-orange-50"
-                  }`}
-                >
-                  {/* Status and Time Badges */}
-                  <div className="flex items-center flex-wrap gap-2 mb-4">
-                    <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold border border-orange-300">
-                      ⏳ {t('cleanerRequests.awaitingResponse')}
-                    </span>
-                    {urgent ? (
-                      <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold border border-red-300 animate-pulse">
-                        🚨 {t('cleanerRequests.urgentExpiresIn')} {timeRemaining}
-                      </span>
-                    ) : (
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold border border-blue-300">
-                        ⏰ {t('cleanerRequests.expiresIn')} {timeRemaining}
-                      </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-gray-700">
+                      <UserIcon className="w-5 h-5 mr-2 text-gray-500" />
+                      <span><strong>Customer:</strong> {request.customerName}</span>
+                    </div>
+                    <div className="flex items-center text-gray-700">
+                      <Mail className="w-5 h-5 mr-2 text-gray-500" />
+                      <span><strong>Email:</strong> {request.customerEmail}</span>
+                    </div>
+                    {request.customerPhone && (
+                      <div className="flex items-center text-gray-700">
+                        <span className="mr-2">📱</span>
+                        <span><strong>Phone:</strong> {request.customerPhone}</span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Service Type Header */}
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{request.cleaningType}</h3>
-
-                  {/* Earnings Display - Prominent */}
-                  <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-green-700 mb-1 font-medium">💰 {t('cleanerRequests.yourEarnings')}</p>
-                        <p className="text-3xl font-bold text-green-600">
-                          €{(request.cleanerAmount || request.amount * 0.85).toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-600 mb-1">{t('cleanerRequests.totalAmount')}</p>
-                        <p className="text-lg font-semibold text-gray-700">€{request.amount.toFixed(2)}</p>
-                        <p className="text-xs text-gray-500">{request.duration}h {t('common.service')}</p>
-                      </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center text-gray-700">
+                      <Calendar className="w-5 h-5 mr-2 text-gray-500" />
+                      <span><strong>Date:</strong> {formattedDate}</span>
                     </div>
-                  </div>
-
-                  {/* Customer Information */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">{t('cleanerRequests.customerDetails')}</p>
-                    <div className="space-y-2">
-                      <p className="text-gray-900 flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-gray-600" />
-                        <span className="font-semibold">{request.customerName}</span>
-                      </p>
-                      <p className="text-gray-700 text-sm pl-6">{request.customerEmail}</p>
-                      {request.customerPhone && (
-                        <p className="text-gray-700 text-sm pl-6">📱 {request.customerPhone}</p>
-                      )}
+                    <div className="text-gray-700">
+                      <span><strong>Time:</strong> {request.start} - {request.end}</span>
                     </div>
-                  </div>
-
-                  {/* Date and Time */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg mb-4">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">{formatDate(request.date)}</span>
+                    <div className="text-gray-700">
+                      <span><strong>Duration:</strong> {request.duration} hours</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Clock className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">
-                        {request.start} - {request.end}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleAccept(request)}
-                      disabled={isProcessing}
-                      className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      {isProcessing ? t('cleanerRequests.processing') : t('cleanerRequests.acceptBooking')}
-                    </button>
-                    <button
-                      onClick={() => openRejectModal(request)}
-                      disabled={isProcessing}
-                      className="flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      <XCircle className="w-5 h-5" />
-                      {isProcessing ? t('cleanerRequests.processing') : t('cleanerRequests.reject')}
-                    </button>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="pt-4 mt-4 border-t border-gray-200 text-xs text-gray-500">
-                    <p>{t('cleanerRequests.requestId')}: {request.id.slice(0, 8)}...</p>
-                    <p>{t('cleanerRequests.received')} {new Date(request.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('cleanerRequests.noPendingRequests')}</h3>
-            <p className="text-gray-600 mb-6">
-              {t('cleanerRequests.allCaughtUp')}
-            </p>
-            <Link
-              href="/cleaner/bookings"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-            >
-              {t('cleanerRequests.viewMyBookings')}
-            </Link>
-          </div>
-        )}
 
-        {/* Navigation */}
-        <div className="mt-8 flex justify-between items-center">
-          <Link href="/cleaner-dashboard" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← {t('cleanerRequests.backToDashboard')}
-          </Link>
-          <Link href="/cleaner/bookings" className="text-blue-600 hover:text-blue-700 font-medium">
-            {t('cleanerRequests.viewConfirmedBookings')} →
-          </Link>
-        </div>
-      </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <p className="text-green-800 font-semibold text-lg">
+                    💰 Service Value: €{request.amount.toFixed(2)}
+                  </p>
+                  <p className="text-green-700 text-sm mt-1">
+                    Send invoice to customer after completing the service
+                  </p>
+                </div>
 
-      {/* Rejection Modal */}
-      {showRejectModal && selectedBooking && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('cleanerRequests.rejectBookingQuestion')}</h2>
-            <p className="text-gray-600 mb-4">
-              {t('cleanerRequests.customerRefunded')}
-            </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleConfirmation(request.id, request.confirmationToken, "accept")}
+                    disabled={confirmingId === request.id}
+                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    {confirmingId === request.id ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <Check className="w-5 h-5 mr-2" />
+                        Accept Booking
+                      </>
+                    )}
+                  </button>
 
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder={t('cleanerRequests.reasonPlaceholder')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-              rows={4}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={closeRejectModal}
-                disabled={processingId !== null}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleReject}
-                disabled={processingId !== null}
-                className="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:bg-gray-400"
-              >
-                {processingId ? t('cleanerRequests.rejecting') : t('cleanerRequests.confirmRejection')}
-              </button>
-            </div>
-          </div>
+                  <button
+                    onClick={() => handleConfirmation(request.id, request.confirmationToken, "reject")}
+                    disabled={confirmingId === request.id}
+                    className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    {confirmingId === request.id ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <X className="w-5 h-5 mr-2" />
+                        Decline
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

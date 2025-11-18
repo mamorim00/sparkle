@@ -245,7 +245,8 @@ export const sendBookingConfirmationEmails = functions.firestore.onDocumentCreat
     if (!bookingData) return;
 
     const bookingId = event.params.bookingId;
-    const isPendingAcceptance = bookingData.status === "pending_acceptance";
+    // Support both old (pending_acceptance) and new (pending_cleaner_confirmation) status
+    const isPendingAcceptance = bookingData.status === "pending_acceptance" || bookingData.status === "pending_cleaner_confirmation";
 
     try {
       // Get cleaner details
@@ -278,6 +279,23 @@ export const sendBookingConfirmationEmails = functions.firestore.onDocumentCreat
         expiresInHours = hoursUntilExpiry > 1 ? `${hoursUntilExpiry} hours` : "1 hour";
       }
 
+      // Generate confirmation URLs for cleaner (for MVP flow)
+      const appUrl = process.env.APP_URL || "http://localhost:3000";
+      const acceptUrl = bookingData.confirmationToken
+        ? `${appUrl}/api/confirm-booking?token=${bookingData.confirmationToken}&action=accept&method=email`
+        : `${appUrl}/cleaner/requests`;
+      const rejectUrl = bookingData.confirmationToken
+        ? `${appUrl}/api/confirm-booking?token=${bookingData.confirmationToken}&action=reject&method=email`
+        : `${appUrl}/cleaner/requests`;
+
+      // Generate WhatsApp message link if cleaner has phone
+      const whatsappMessage = encodeURIComponent(
+        `Hi! Regarding booking ${bookingId} for ${bookingData.date} at ${bookingData.start}. Please let me know if you can confirm this booking.`
+      );
+      const whatsappUrl = cleanerData.phone
+        ? `https://wa.me/${cleanerData.phone.replace(/\D/g, "")}?text=${whatsappMessage}`
+        : null;
+
       // --- Email to Customer ---
       const customerEmailHtml = isPendingAcceptance ? `
         <!DOCTYPE html>
@@ -304,14 +322,14 @@ export const sendBookingConfirmationEmails = functions.firestore.onDocumentCreat
               </div>
               <div class="content">
                 <p>Hi ${customerName},</p>
-                <p>Thank you for your payment! Your booking request has been sent to <strong>${bookingData.cleanerName}</strong> and is awaiting their confirmation.</p>
+                <p>Your booking request has been sent to <strong>${bookingData.cleanerName}</strong> and is awaiting their confirmation.</p>
 
                 <div class="pending-box">
                   <strong>⚠️ Important:</strong><br/>
                   <p style="margin: 10px 0 0 0;">
                     This booking requires cleaner acceptance within <strong>${expiresInHours}</strong>.
-                    You'll receive an email once the cleaner confirms or if the request expires.
-                    Your payment is held securely and will only be charged if accepted.
+                    You'll receive an email once the cleaner confirms.
+                    ${bookingData.createdVia === "direct" ? "The cleaner will send you an invoice after completing the service." : "Your payment is held securely and will only be charged if accepted."}
                   </p>
                 </div>
 
@@ -503,17 +521,30 @@ export const sendBookingConfirmationEmails = functions.firestore.onDocumentCreat
                 </div>
 
                 <div class="highlight">
-                  <strong>💰 Potential Earnings:</strong> €${bookingData.cleanerAmount.toFixed(2)} (you receive 85%)
+                  <strong>💰 ${bookingData.createdVia === "direct" ? "Service Value" : "Potential Earnings"}:</strong> €${bookingData.amount ? bookingData.amount.toFixed(2) : (bookingData.cleanerAmount ? bookingData.cleanerAmount.toFixed(2) : "0.00")} ${bookingData.createdVia === "direct" ? "(invoice client after service)" : "(you receive 85%)"}
                 </div>
 
                 <div style="text-align: center; margin: 20px 0;">
-                  <a href="${process.env.APP_URL || 'http://localhost:3000'}/cleaner/requests" class="button">
-                    Accept Request
+                  <a href="${acceptUrl}" class="button">
+                    ✅ Accept Request
                   </a>
-                  <a href="${process.env.APP_URL || 'http://localhost:3000'}/cleaner/requests" class="button button-secondary">
-                    Reject Request
+                  <a href="${rejectUrl}" class="button button-secondary">
+                    ❌ Reject Request
                   </a>
                 </div>
+
+                ${whatsappUrl ? `
+                <div style="text-align: center; margin: 20px 0; padding: 15px; background: #dcfce7; border-radius: 5px;">
+                  <p style="margin: 0 0 10px 0;"><strong>Or respond via WhatsApp:</strong></p>
+                  <a href="${whatsappUrl}" style="display: inline-block; background: #25D366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    💬 Reply on WhatsApp
+                  </a>
+                </div>
+                ` : `
+                <p style="text-align: center; color: #6b7280; margin: 20px 0;">
+                  Or visit your <a href="${appUrl}/cleaner/requests" style="color: #667eea;">dashboard</a> to respond
+                </p>
+                `}
 
                 <p><strong>Before accepting:</strong></p>
                 <ul>
@@ -1416,24 +1447,35 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
 
       console.log(`🔍 Checking for expired booking requests at ${now}`);
 
-      // Get all pending_acceptance bookings
-      const bookingsSnap = await db
+      // Get all pending bookings (both old and new flow)
+      const pendingAcceptanceSnap = await db
         .collection("bookings")
         .where("status", "==", "pending_acceptance")
         .get();
 
-      if (bookingsSnap.empty) {
+      const pendingCleanerConfirmationSnap = await db
+        .collection("bookings")
+        .where("status", "==", "pending_cleaner_confirmation")
+        .get();
+
+      // Combine both query results
+      const allDocs = [
+        ...pendingAcceptanceSnap.docs,
+        ...pendingCleanerConfirmationSnap.docs
+      ];
+
+      if (allDocs.length === 0) {
         console.log("ℹ️ No pending requests to check");
         return;
       }
 
-      console.log(`📋 Found ${bookingsSnap.size} pending requests to check`);
+      console.log(`📋 Found ${allDocs.length} pending requests to check`);
 
       let expiredCount = 0;
       const expiredBookings: { id: string; data: FirebaseFirestore.DocumentData }[] = [];
 
       // Check each booking for expiration
-      for (const bookingDoc of bookingsSnap.docs) {
+      for (const bookingDoc of allDocs) {
         const bookingData = bookingDoc.data();
         const bookingId = bookingDoc.id;
 
@@ -1462,7 +1504,8 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
           const bookingRef = db.collection("bookings").doc(booking.id);
           const bookingData = booking.data;
 
-          // Cancel the payment intent (auto-refunds customer)
+          // Cancel the payment intent if exists (auto-refunds customer)
+          // For MVP flow (createdVia: "direct"), there's no payment to cancel
           if (bookingData.paymentIntentId) {
             try {
               const stripe = (await import("stripe")).default;
@@ -1481,11 +1524,17 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
           }
 
           // Update booking status to expired
-          await bookingRef.update({
+          const updateData: Record<string, unknown> = {
             status: "expired",
-            refundStatus: "full",
-            refundedAt: new Date().toISOString(),
-          });
+          };
+
+          // Only add refund fields if there was a payment
+          if (bookingData.paymentIntentId) {
+            updateData.refundStatus = "full";
+            updateData.refundedAt = new Date().toISOString();
+          }
+
+          await bookingRef.update(updateData);
 
           console.log(`✅ Marked booking ${booking.id} as expired`);
 
@@ -1564,6 +1613,7 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
                       </div>
                     </div>
 
+                    ${bookingData.paymentIntentId ? `
                     <div class="refund-box">
                       <strong>💰 Full Refund Processed</strong><br/>
                       <p style="margin: 10px 0 0 0;">
@@ -1571,6 +1621,14 @@ export const expireBookingRequests = functions.scheduler.onSchedule(
                         The refund will be processed to your original payment method within 5-10 business days.
                       </p>
                     </div>
+                    ` : `
+                    <div style="padding: 15px; background: #fef3c7; border-radius: 5px; margin: 15px 0;">
+                      <strong>ℹ️ No Charges Made</strong><br/>
+                      <p style="margin: 10px 0 0 0;">
+                        Since this was a "book now, pay later" request, no charges were made to your account.
+                      </p>
+                    </div>
+                    `}
 
                     <h3 style="color: #667eea;">Book Another Cleaner</h3>
                     <p>We apologize for the inconvenience. You can browse our other available cleaners to find someone who can help you at your preferred time.</p>
@@ -1730,7 +1788,7 @@ export const sendCleanerStatusEmails = functions.firestore.onDocumentUpdated(
           `;
 
           await resend.emails.send({
-            from: "Sparkle <info@@sparcklecleaning.com>",
+            from: "Sparkle <info@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: "🎉 Congratulations! Your Sparkle Profile is Approved",
             html: approvalEmailHtml,
@@ -1810,7 +1868,7 @@ export const sendCleanerStatusEmails = functions.firestore.onDocumentUpdated(
           `;
 
           await resend.emails.send({
-            from: "Sparkle <info@@sparcklecleaning.com>",
+            from: "Sparkle <info@sparcklecleaning.com>",
             to: cleanerEmail,
             subject: "Update on Your Sparkle Application",
             html: rejectionEmailHtml,

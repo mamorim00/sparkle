@@ -155,6 +155,11 @@ export default function BookingDetailsPage() {
       pending_acceptance: {
         icon: <AlertCircle className="w-5 h-5" />,
         color: "bg-orange-100 text-orange-800 border-orange-200",
+        label: "Awaiting Cleaner Confirmation (Paid)",
+      },
+      pending_cleaner_confirmation: {
+        icon: <AlertCircle className="w-5 h-5" />,
+        color: "bg-orange-100 text-orange-800 border-orange-200",
         label: "Awaiting Cleaner Confirmation",
       },
       confirmed: {
@@ -319,20 +324,33 @@ export default function BookingDetailsPage() {
               <span className="font-semibold text-gray-900">€{booking.amount.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">Platform Fee (15%)</span>
-              <span className="font-semibold text-gray-900">€{booking.platformFee.toFixed(2)}</span>
-            </div>
+            {booking.platformFee !== undefined && booking.platformFee > 0 && (
+              <>
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Platform Fee (15%)</span>
+                  <span className="font-semibold text-gray-900">€{booking.platformFee.toFixed(2)}</span>
+                </div>
 
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">Cleaner Receives (85%)</span>
-              <span className="font-semibold text-gray-900">€{booking.cleanerAmount.toFixed(2)}</span>
-            </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Cleaner Receives (85%)</span>
+                  <span className="font-semibold text-gray-900">€{booking.cleanerAmount.toFixed(2)}</span>
+                </div>
+              </>
+            )}
 
-            <div className="flex justify-between items-center py-3 bg-gray-50 rounded-lg px-4 mt-2">
-              <span className="font-bold text-gray-900">Total Paid</span>
-              <span className="font-bold text-2xl text-gray-900">€{booking.amount.toFixed(2)}</span>
-            </div>
+            {booking.status === "pending_cleaner_confirmation" ? (
+              <div className="py-3 bg-blue-50 rounded-lg px-4 mt-2">
+                <p className="text-sm text-blue-800">
+                  <strong>💳 Payment After Service</strong><br/>
+                  No payment required yet. The cleaner will send you an invoice after completing the service.
+                </p>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center py-3 bg-gray-50 rounded-lg px-4 mt-2">
+                <span className="font-bold text-gray-900">Total {booking.status === "cancelled" ? "Paid" : "Amount"}</span>
+                <span className="font-bold text-2xl text-gray-900">€{booking.amount.toFixed(2)}</span>
+              </div>
+            )}
 
             {booking.refundAmount && booking.refundAmount > 0 && (
               <div className="flex justify-between items-center py-2 text-green-600">
@@ -342,9 +360,11 @@ export default function BookingDetailsPage() {
             )}
 
             <div className="pt-3 space-y-2 text-sm text-gray-600">
-              <p>
-                <strong>Payment Status:</strong> {booking.payoutStatus}
-              </p>
+              {booking.payoutStatus && (
+                <p>
+                  <strong>Payment Status:</strong> {booking.payoutStatus}
+                </p>
+              )}
               <p>
                 <strong>Currency:</strong> {booking.currency.toUpperCase()}
               </p>
