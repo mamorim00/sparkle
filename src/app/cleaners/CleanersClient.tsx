@@ -2,13 +2,24 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { db } from "../../lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import CleanerCard from "../../components/CleanerCard";
 import { useLocation } from "../../context/LocationContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { SERVICES_BASIC, DEFAULT_CLEANER_IMAGE } from "../../lib/constants";
-import { X, SlidersHorizontal } from "lucide-react";
+import { X, SlidersHorizontal, Map as MapIcon, Grid } from "lucide-react";
+
+// Dynamically import MapView to avoid SSR issues with mapbox-gl
+const MapView = dynamic(() => import("../../components/MapView"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+      <p className="text-gray-600">Loading map...</p>
+    </div>
+  ),
+});
 
 interface Cleaner {
   id: string;
@@ -22,6 +33,7 @@ interface Cleaner {
   service: string[];
   nextAvailable2h: string | null;
   nextAvailable6h: string | null;
+  coordinates?: { lat: number; lng: number };
 }
 
 
@@ -39,6 +51,16 @@ export default function CleanersClient() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
   const [minRating, setMinRating] = useState<number>(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Map/List view toggle state - for both mobile and desktop
+  const [showMap, setShowMap] = useState(false); // Start with map hidden
+  const [selectedCleanerId, setSelectedCleanerId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering map after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Set serviceId from URL params
   useEffect(() => {
@@ -63,10 +85,31 @@ export default function CleanersClient() {
         const snapshot = await getDocs(q);
 
         const data: Cleaner[] = snapshot.docs.map((doc) => {
-          const cleanerData = doc.data() as Omit<Cleaner, "id" | "photoUrl"> & {
-            photoUrl?: string;
+          const cleanerData = doc.data();
+
+          // Convert Firebase Timestamps to strings
+          const convertTimestamp = (value: any): string | null => {
+            if (!value) return null;
+            if (value instanceof Timestamp) {
+              return value.toDate().toISOString();
+            }
+            return typeof value === 'string' ? value : null;
           };
-          return { id: doc.id, ...cleanerData, photoUrl: cleanerData.photoUrl || DEFAULT_CLEANER_IMAGE };
+
+          return {
+            id: doc.id,
+            name: cleanerData.name,
+            photoUrl: cleanerData.photoUrl || DEFAULT_CLEANER_IMAGE,
+            rating: cleanerData.rating || 0,
+            reviewCount: cleanerData.reviewCount || 0,
+            location: cleanerData.location,
+            pricePerHour: cleanerData.pricePerHour,
+            status: cleanerData.status,
+            service: cleanerData.service || [],
+            nextAvailable2h: convertTimestamp(cleanerData.nextAvailable2h),
+            nextAvailable6h: convertTimestamp(cleanerData.nextAvailable6h),
+            coordinates: cleanerData.coordinates,
+          };
         });
 
         setCleaners(data);
@@ -96,6 +139,11 @@ export default function CleanersClient() {
     });
   }, [cleaners, priceRange, minRating]);
 
+  // Count cleaners with coordinates
+  const cleanersWithCoordinates = useMemo(() => {
+    return filteredCleaners.filter(c => c.coordinates?.lat && c.coordinates?.lng).length;
+  }, [filteredCleaners]);
+
   const handleResetFilters = () => {
     setPriceRange([0, 100]);
     setMinRating(0);
@@ -107,13 +155,36 @@ export default function CleanersClient() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {t('cleanersPage.title')} {location}
-          </h1>
-          <p className="text-gray-600">
-            {filteredCleaners.length} {filteredCleaners.length !== 1 ? t('cleanersPage.cleanersFound') : t('cleanersPage.cleanerFound')}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              {t('cleanersPage.title')} {location}
+            </h1>
+            <p className="text-gray-600">
+              {filteredCleaners.length} {filteredCleaners.length !== 1 ? t('cleanersPage.cleanersFound') : t('cleanersPage.cleanerFound')}
+            </p>
+          </div>
+
+          {/* Map Toggle - All Screens */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                showMap
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-600 border border-gray-300 hover:border-gray-400"
+              }`}
+              title={cleanersWithCoordinates === 0 ? "No cleaners have location data yet" : undefined}
+            >
+              <MapIcon className="w-5 h-5" />
+              <span className="hidden sm:inline">{showMap ? "Hide Map" : "Show Map"}</span>
+              {cleanersWithCoordinates > 0 && (
+                <span className="hidden md:inline text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {cleanersWithCoordinates}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Filter Toggle */}
@@ -336,7 +407,7 @@ export default function CleanersClient() {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* Main Content - Split Screen Layout */}
           <main className="flex-1">
             {filteredCleaners.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
@@ -356,7 +427,90 @@ export default function CleanersClient() {
                   {t('cleanersPage.resetAllFilters')}
                 </button>
               </div>
+            ) : showMap ? (
+              /* Map Mode: Split Screen with List */
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Map - Full width on mobile, 60% on desktop */}
+                <div className="w-full lg:w-[60%] h-[500px] lg:h-[calc(100vh-300px)] rounded-xl overflow-hidden shadow-lg border border-gray-200 lg:sticky lg:top-6">
+                  {isMounted ? (
+                    filteredCleaners.filter(c => c.coordinates?.lat && c.coordinates?.lng).length > 0 ? (
+                      <MapView
+                        cleaners={filteredCleaners
+                          .filter(c => c.coordinates?.lat && c.coordinates?.lng)
+                          .map(c => ({
+                            ...c,
+                            coordinates: c.coordinates!,
+                          }))}
+                        selectedCleanerId={selectedCleanerId}
+                        onMarkerClick={(id) => setSelectedCleanerId(id)}
+                        className="h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100 p-8 text-center">
+                        <div>
+                          <MapIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                          <p className="text-gray-600 font-medium mb-2">No location data available</p>
+                          <p className="text-sm text-gray-500">Cleaners need to set their zipcode for map display</p>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <p className="text-gray-600">Loading map...</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Cleaners List - 40% on desktop */}
+                <div className="w-full lg:w-[40%]">
+                  <div className="space-y-4">
+                    {filteredCleaners
+                      .filter(c => c.coordinates?.lat && c.coordinates?.lng)
+                      .map((cleaner) => (
+                      <div
+                        key={cleaner.id}
+                        onMouseEnter={() => setSelectedCleanerId(cleaner.id)}
+                        onMouseLeave={() => setSelectedCleanerId(null)}
+                        className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition-all hover:shadow-md ${
+                          selectedCleanerId === cleaner.id ? 'border-blue-500 shadow-md' : 'border-gray-200'
+                        }`}
+                        onClick={() => window.location.href = `/book/${cleaner.id}`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={cleaner.photoUrl}
+                            alt={cleaner.name}
+                            className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg text-gray-900 truncate">{cleaner.name}</h3>
+                            {cleaner.rating && cleaner.rating > 0 ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-yellow-500">★</span>
+                                <span className="text-sm font-medium">{cleaner.rating.toFixed(1)}</span>
+                                <span className="text-sm text-gray-500">({cleaner.reviewCount || 0})</span>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 mt-1">New cleaner</p>
+                            )}
+                            <p className="text-sm text-gray-600 mt-1">{cleaner.location}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-lg font-bold text-green-600">€{cleaner.pricePerHour}/hr</span>
+                              {cleaner.nextAvailable2h && (
+                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  Available soon
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
+              /* Grid Mode: Cards only */
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredCleaners.map((cleaner) => (
                   <CleanerCard key={cleaner.id} {...cleaner} selectedDuration={2} />

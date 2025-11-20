@@ -14,7 +14,8 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  FileText
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -25,6 +26,7 @@ interface CleanerStats {
   totalEarnings: number;
   status: string;
   stripeConnected?: boolean;
+  awaitingInvoice: number;
 }
 
 export default function CleanerDashboard() {
@@ -37,6 +39,7 @@ export default function CleanerDashboard() {
     totalEarnings: 0,
     status: "pending",
     stripeConnected: false,
+    awaitingInvoice: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -96,11 +99,15 @@ export default function CleanerDashboard() {
         );
         const completedSnapshot = await getDocs(completedQuery);
 
-        // Calculate total earnings
+        // Calculate total earnings and count bookings awaiting invoice
         let totalEarnings = 0;
+        let awaitingInvoice = 0;
         completedSnapshot.forEach((doc) => {
           const booking = doc.data();
           totalEarnings += booking.cleanerAmount || (booking.amount * 0.85);
+          if (!booking.cleanerInvoiced) {
+            awaitingInvoice++;
+          }
         });
 
         setStats({
@@ -110,6 +117,7 @@ export default function CleanerDashboard() {
           totalEarnings,
           status: cleanerData.status || "pending",
           stripeConnected: cleanerData.stripeConnected || false,
+          awaitingInvoice,
         });
       }
     } catch (error) {
@@ -193,7 +201,7 @@ export default function CleanerDashboard() {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
             {/* Pending Requests */}
             <Link
               href="/cleaner/requests"
@@ -247,6 +255,23 @@ export default function CleanerDashboard() {
                   <p className="text-3xl font-bold text-green-600">€{stats.totalEarnings.toFixed(2)}</p>
                 </div>
                 <Euro className="w-10 h-10 text-green-600 opacity-80" />
+              </div>
+            </Link>
+
+            {/* Awaiting Invoice */}
+            <Link
+              href="/cleaner/bookings"
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Awaiting Invoice</p>
+                  <p className="text-3xl font-bold text-orange-600">{stats.awaitingInvoice}</p>
+                  {stats.awaitingInvoice > 0 && (
+                    <p className="text-xs text-orange-600 mt-1 font-medium">Send invoices</p>
+                  )}
+                </div>
+                <FileText className="w-10 h-10 text-orange-600 opacity-80" />
               </div>
             </Link>
           </div>

@@ -28,6 +28,9 @@ interface Booking {
   completedAt?: string;
   cancelledAt?: string;
   requestExpiresAt?: string;
+  cleanerInvoiced?: boolean;
+  invoicedAt?: string;
+  cleanerId?: string;
 }
 
 type TabType = "requests" | "upcoming" | "completed" | "cancelled";
@@ -39,6 +42,9 @@ export default function CleanerBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("requests");
   const [mounted, setMounted] = useState(false);
+  const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
+  const [invoicingBookingId, setInvoicingBookingId] = useState<string | null>(null);
+  const [completionMessage, setCompletionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -84,6 +90,66 @@ export default function CleanerBookingsPage() {
       console.error("Error fetching bookings:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId: string) => {
+    if (!user) return;
+
+    setCompletingBookingId(bookingId);
+    setCompletionMessage(null);
+
+    try {
+      const response = await fetch("/api/complete-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, cleanerId: user.uid }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCompletionMessage(data.reminderMessage);
+        // Refresh bookings
+        await fetchBookings(user.uid);
+        // Auto-switch to completed tab
+        setActiveTab("completed");
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error completing booking:", error);
+      alert("Failed to complete booking. Please try again.");
+    } finally {
+      setCompletingBookingId(null);
+    }
+  };
+
+  const handleMarkInvoiced = async (bookingId: string) => {
+    if (!user) return;
+
+    setInvoicingBookingId(bookingId);
+
+    try {
+      const response = await fetch("/api/mark-invoiced", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, cleanerId: user.uid }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Refresh bookings to update UI
+        await fetchBookings(user.uid);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error marking as invoiced:", error);
+      alert("Failed to mark as invoiced. Please try again.");
+    } finally {
+      setInvoicingBookingId(null);
     }
   };
 
@@ -312,6 +378,23 @@ export default function CleanerBookingsPage() {
           </button>
         </div>
 
+        {/* Completion Message Banner */}
+        {completionMessage && (
+          <div className="bg-orange-100 border-2 border-orange-400 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <div className="text-2xl">📧</div>
+            <div className="flex-1">
+              <p className="font-semibold text-orange-900 mb-1">Invoice Reminder</p>
+              <p className="text-orange-800">{completionMessage}</p>
+            </div>
+            <button
+              onClick={() => setCompletionMessage(null)}
+              className="text-orange-600 hover:text-orange-800 font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Booking Cards */}
         {displayBookings.length > 0 ? (
           <div className="space-y-4">
@@ -339,6 +422,16 @@ export default function CleanerBookingsPage() {
                     {timeUntil && activeTab === "upcoming" && (
                       <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold border border-blue-300">
                         ⏰ {timeUntil}
+                      </span>
+                    )}
+                    {booking.status === "completed" && !booking.cleanerInvoiced && (
+                      <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold border border-orange-300 animate-pulse">
+                        📄 Invoice Pending
+                      </span>
+                    )}
+                    {booking.cleanerInvoiced && (
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold border border-green-300">
+                        ✓ Invoiced
                       </span>
                     )}
                   </div>
@@ -418,6 +511,41 @@ export default function CleanerBookingsPage() {
                       </Link>
                     )}
                   </div>
+
+                  {/* Invoice Warning Banner for Completed Jobs */}
+                  {booking.status === "completed" && !booking.cleanerInvoiced && (
+                    <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="text-2xl">⚠️</div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-orange-900 mb-1">Invoice Reminder</p>
+                          <p className="text-sm text-orange-800">
+                            Remember to send your invoice to <strong>{booking.customerEmail}</strong> for €{booking.amount.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleMarkInvoiced(booking.id)}
+                        disabled={invoicingBookingId === booking.id}
+                        className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {invoicingBookingId === booking.id ? "Marking as Invoiced..." : "✓ Mark as Invoiced"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Completion Button for Upcoming Jobs */}
+                  {booking.status === "confirmed" && activeTab === "upcoming" && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => handleCompleteBooking(booking.id)}
+                        disabled={completingBookingId === booking.id}
+                        className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {completingBookingId === booking.id ? "Completing..." : "✓ Mark as Completed"}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Footer */}
                   <div className="pt-4 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">

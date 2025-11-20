@@ -32,6 +32,7 @@ firebase functions:secrets:set KEY_NAME  # Set secret environment variables
 ### Tech Stack
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS 4
+- **Maps**: Mapbox GL JS (via react-map-gl)
 - **Auth**: Firebase Authentication
 - **Database**: Firestore (europe-north2)
 - **Storage**: Firebase Storage
@@ -61,8 +62,9 @@ The app uses **two Firebase implementations**:
 ### Data Model (Firestore Collections)
 
 #### Core Collections
-- **`cleaners`**: Cleaner profiles with schedule, pricing, availability cache
+- **`cleaners`**: Cleaner profiles with schedule, pricing, availability cache, and location data
   - Pre-calculated fields: `nextAvailable2h`, `nextAvailable6h` (updated by Cloud Functions)
+  - Location fields: `zipcode`, `coordinates: { lat, lng }`, `location` (city name)
   - Schedule stored as: `{ monday: [{start, end}], tuesday: [...], ... }`
   - Exceptions: Array of blocked time slots with dates
 
@@ -145,6 +147,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 NEXT_PUBLIC_FIREBASE_APP_ID
+NEXT_PUBLIC_MAPBOX_TOKEN       # Get from https://account.mapbox.com/access-tokens/
 ```
 
 ### Booking Flow
@@ -176,6 +179,43 @@ NEXT_PUBLIC_FIREBASE_APP_ID
 - **Authenticated Users**: Firebase Auth with email/password
 - **Checkout Page**: Shows login/register/guest tabs
 - **Protected Routes**: Use Firebase auth state (`onAuthStateChanged`)
+
+### Map Feature
+
+#### Overview
+The cleaners listing page (`/cleaners`) includes an interactive Mapbox map that displays cleaner locations based on their zipcode.
+
+#### Components
+- **MapView** (`src/components/MapView.tsx`): Main map component using `react-map-gl`
+  - Displays cleaners as markers with profile photos and ratings
+  - Shows popup with cleaner details on marker click
+  - Syncs with filters (service type, price, rating)
+  - Auto-adjusts bounds to fit all visible cleaners
+
+#### Layout Strategy
+- **Desktop (≥1024px)**: Split screen - Map (50%) on left, scrollable cleaner cards (50%) on right
+- **Mobile/Tablet (<1024px)**: Toggle button to switch between map view and list view
+- **Interaction**: Hovering over cards highlights corresponding map markers
+
+#### Cleaner Location Flow
+1. **During Signup** (`/cleaner/setup`):
+   - Step 1: Cleaner enters zipcode
+   - Validation: Zipcode format validated and geocoded in real-time
+   - Geocoding: Mapbox Geocoding API converts zipcode → `{ lat, lng }` coordinates
+   - Storage: Saves `zipcode`, `coordinates`, and `location` (city name) to Firestore
+
+2. **On Cleaners Page**:
+   - Fetches cleaners with coordinates from Firestore
+   - Displays as markers on map
+   - Filters apply to both map and list views simultaneously
+
+#### Geocoding Utility
+- **File**: `src/lib/geocoding.ts`
+- **Functions**:
+  - `geocodeZipcode(zipcode, country?)`: Convert zipcode to coordinates
+  - `reverseGeocode(coordinates)`: Convert coordinates to address
+  - `validateZipcode(zipcode, country?)`: Validate European zipcode formats
+- **API**: Uses Mapbox Geocoding API (included in Mapbox token, 50k free requests/month)
 
 ## Important Notes
 

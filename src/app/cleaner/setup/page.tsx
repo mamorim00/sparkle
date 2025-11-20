@@ -20,6 +20,9 @@ interface CleanerProfile {
   username: string;
   name?: string;
   photoUrl: string;
+  zipcode?: string;
+  coordinates?: { lat: number; lng: number };
+  location?: string;
   pricePerHour: number;
   phone: string;
   schedule: ScheduleItem[];

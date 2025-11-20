@@ -19,6 +19,9 @@ interface CleanerProfile {
   username: string;
   name?: string;
   photoUrl: string;
+  zipcode?: string;
+  coordinates?: { lat: number; lng: number };
+  location?: string;
   pricePerHour: number;
   phone: string;
   schedule: ScheduleItem[];
@@ -91,12 +94,14 @@ export default function Step4Verification({ onBack, cleanerData }: Step4Verifica
         status: "pending",
       };
 
-      // Save all data including email and name
+      // Save all data including email, name, zipcode, and coordinates
       await setDoc(doc(db, "cleaners", user.uid), {
         ...updatedData,
         email: user.email,
         name: cleanerData.name || cleanerData.username,
-        location: "Dublin", // Default location - can be made dynamic later
+        zipcode: cleanerData.zipcode || "",
+        coordinates: cleanerData.coordinates || null,
+        location: cleanerData.location || "Unknown",
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
